@@ -1,3 +1,5 @@
+{-# LANGUAGE LambdaCase #-}
+
 import Euterpea
 import Codec.Midi (importFile)
 
