@@ -29,5 +29,5 @@ main = do
     writeMidiFile "ga_output.mid" gaMusic
 
     -- read test
-    readMidi "FurElise.mid" >>= \m ->
-        maybe (putStrLn "Error reading FurElise.mid.") play m
+    -- readMidi "FurElise.mid" >>= \m ->
+    --    maybe (putStrLn "Error reading FurElise.mid.") play m

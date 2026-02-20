@@ -79,7 +79,14 @@ evolve gens popSize = do
     let bestMelody = head $ selectBest finalPop 1
     return $ melodyToMusic bestMelody
 
--- | konvertiranje melodije u Euterpea glazbu                
+-- | konvertiranje melodije u Euterpea glazbu          
+
+-- | melodyToMusic :: Melody -> Music Pitch
+-- | melodyToMusic = line . map (note qn)
+
+-- | writeMusic :: FilePath -> Music Pitch -> IO ()
+-- | writeMusic fp m = writeMidi fp (toMidi m)
+
 melodyToMusic :: Melody -> Music Pitch
 melodyToMusic = line . map (note qn)
 
