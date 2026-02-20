@@ -10,7 +10,10 @@ dependencies:
   - Euterpea
   - midi
   - HCodecs
+  - random
 
 executables:
   funkprog-project:
-    main: readmidi.hs
+    main: mainmidi.hs
+    other-modules:
+      - Genetic
