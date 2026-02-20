@@ -1,5 +1,9 @@
 {-# LANGUAGE LambdaCase #-}
 
+
+-- | stack exec -- funkprog-project
+-- | stack build
+
 import Euterpea
 import Codec.Midi (importFile)
 import qualified Genetic
@@ -10,7 +14,7 @@ readMidi path =
         Right midi -> pure $ Just (fromMidi midi)
         Left _     -> pure Nothing
 
--- | Write a music value to a MIDI file and (optionally) play it.
+-- | kreiranje genetsko generirane glazbe i spremanje u .mid
 writeMidiFile :: FilePath -> Music Pitch -> IO ()
 writeMidiFile fp m = do
     putStrLn $ "Writing MIDI to " ++ fp
@@ -19,11 +23,11 @@ writeMidiFile fp m = do
 
 main :: IO ()
 main = do
-    -- run the genetic algorithm and save the result
+    -- genetski algoritam
     putStrLn "Generating music with genetic algorithm..."
-    gaMusic <- Genetic.evolve 50 20    -- 50 generations, population of 20
+    gaMusic <- Genetic.evolve 50 20    -- 50 generacija, populacija 20
     writeMidiFile "ga_output.mid" gaMusic
 
-    -- as before, read and play an existing file
+    -- read test
     readMidi "FurElise.mid" >>= \m ->
         maybe (putStrLn "Error reading FurElise.mid.") play m
