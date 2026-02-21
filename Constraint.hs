@@ -40,6 +40,7 @@ checkConstraint m (RhythmPattern ps) = musicDurations m == ps
 checkConstraint _ NoParallelFifths   = True    -- placeholder
 checkConstraint _ (CustomConstraint _) = True  -- placeholder
 
+{-
 -- | pokusaj ekstrakcije pitcheva glazbe
 musicPitchClasses :: Music Pitch -> [PitchClass]
 musicPitchClasses m = case m of
@@ -57,6 +58,27 @@ musicDurations m = case m of
   m1 :+: m2       -> musicDurations m1 ++ musicDurations m2
   m1 :=: m2       -> musicDurations m1 ++ musicDurations m2
   Modify _ m'     -> musicDurations m'
+-}
+
+-- | helper za flattenanje glazbe s ekstrakcijom vrijednosti
+flattenMusic :: (Primitive Pitch -> [a]) -> Music Pitch -> [a]
+flattenMusic f m = case m of
+  Prim p        -> f p
+  m1 :+: m2     -> flattenMusic f m1 ++ flattenMusic f m2
+  m1 :=: m2     -> flattenMusic f m1 ++ flattenMusic f m2
+  Modify _ m'   -> flattenMusic f m'
+
+-- | ekstrakcija pitch klasa
+musicPitchClasses :: Music Pitch -> [PitchClass]
+musicPitchClasses = flattenMusic $ \p -> case p of
+  Note _ (pc, _) -> [pc]
+  Rest _         -> []
+
+-- | ekstrakcija trajanja
+musicDurations :: Music Pitch -> [Dur]
+musicDurations = flattenMusic $ \p -> case p of
+  Note d _ -> [d]
+  Rest d   -> [d]
 
 -- | test
 example :: IO ()
