@@ -15,14 +15,16 @@ type Population = [Melody]
 melodyLen :: Int
 melodyLen = 8
 
+{-
 -- | rng gen za element iz liste
 elements :: [a] -> IO a
 elements xs = (xs !!) <$> randomRIO (0, length xs - 1)
-
--- | major skala, ali to je samo da se ne bi zezali sa invalidnim notama
+-}
+-- | generiranje random pitcheva, ogranicenje na major skali
 randomPitch :: IO Pitch
 randomPitch = do
-    pc <- elements [C, D, E, F, G, A, B]
+    let pitches = [C, D, E, F, G, A, B]
+    pc <- (pitches !!) <$> randomRIO (0, 6)
     oct <- randomRIO (4, 5)
     return (pc, oct)
 
@@ -31,7 +33,25 @@ randomMelody = replicateM melodyLen randomPitch
 
 randomPopulation :: Int -> IO Population
 randomPopulation n = replicateM n randomMelody
+{-
+-- | major skala, ali to je samo da se ne bi zezali sa invalidnim notama
+randomPitch :: IO Pitch
+randomPitch = do
+    pc <- elements [C, D, E, F, G, A, B]
+    oct <- randomRIO (4, 5)
+    return (pc, oct)
+-}
 
+-- | fitness, poboljsani, isti princip
+fitness :: Melody -> Double
+fitness m = fromIntegral $ length $ filter id $ zipWith smallInterval m (tail m)
+  where
+    smallInterval p1 p2 = abs (absPitch p1 - absPitch p2) <= 2
+
+-- | descending, da se najbolje melodije nalaze na pocetku liste
+selectBest :: Population -> Int -> Population
+selectBest pop n = take n $ reverse $ sortOn fitness pop
+{-
 -- | bazicni fitness, koji nagraduje melodije koje imaju male intervale izmedu susjednih nota (<= 2 polutona), da je muzikalno
 fitness :: Melody -> Double
 fitness m = fromIntegral $ sum $ zipWith score m (tail m)
@@ -40,10 +60,7 @@ fitness m = fromIntegral $ sum $ zipWith score m (tail m)
     score (pc1, o1) (pc2, o2)
         | abs (absPitch (pc1, o1) - absPitch (pc2, o2)) <= 2 = 1
         | otherwise = 0
-
--- | descending, da se najbolje melodije nalaze na pocetku liste
-selectBest :: Population -> Int -> Population
-selectBest pop n = take n $ reverse $ sortOn fitness pop
+-}
 
 -- | crossover, spaja dvije melodije tako da uzima pocetak od jedne i kraj od druge, na random crossover pointu
 crossover :: Melody -> Melody -> IO Melody
