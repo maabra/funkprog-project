@@ -27,7 +27,36 @@ type SolveResult = Either String (Music Pitch)
 
 solveComposition :: CompositionSpec -> SolveResult
 solveComposition spec =
-  Left "test"
+  let m = basePattern spec
+      cs = constraints spec
+  in if all (checkConstraint m) cs
+        then Right m
+        else Left "base pattern does not satisfy all constraints"
+
+-- | verifikacija
+checkConstraint :: Music Pitch -> MusicConstraint -> Bool
+checkConstraint m (InKey pc)        = all (== pc) (musicPitchClasses m)
+checkConstraint m (RhythmPattern ps) = musicDurations m == ps
+checkConstraint _ NoParallelFifths   = True    -- placeholder
+checkConstraint _ (CustomConstraint _) = True  -- placeholder
+
+-- | pokusaj ekstrakcije pitcheva glazbe
+musicPitchClasses :: Music Pitch -> [PitchClass]
+musicPitchClasses m = case m of
+  Prim (Note _ (pc, _)) -> [pc]
+  Prim (Rest _)         -> []
+  m1 :+: m2             -> musicPitchClasses m1 ++ musicPitchClasses m2
+  m1 :=: m2             -> musicPitchClasses m1 ++ musicPitchClasses m2
+  Modify _ m'           -> musicPitchClasses m'
+
+-- | pokusaj ekstrakcije trajanja glazbe
+musicDurations :: Music Pitch -> [Dur]
+musicDurations m = case m of
+  Prim (Note d _) -> [d]
+  Prim (Rest d)   -> [d]
+  m1 :+: m2       -> musicDurations m1 ++ musicDurations m2
+  m1 :=: m2       -> musicDurations m1 ++ musicDurations m2
+  Modify _ m'     -> musicDurations m'
 
 -- | test
 example :: IO ()
