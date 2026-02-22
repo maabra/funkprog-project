@@ -7,6 +7,7 @@
 import Euterpea
 import Codec.Midi (importFile)
 import qualified Genetic
+import qualified Constraint
 
 readMidi :: FilePath -> IO (Maybe Music1)
 readMidi path =
@@ -20,14 +21,19 @@ writeMidiFile fp m = do
     putStrLn $ "Writing MIDI to " ++ fp
     Genetic.writeMusic fp m
     play m
-
+    
 main :: IO ()
 main = do
-    -- genetski algoritam
-    putStrLn "Generating music with genetic algorithm..."
-    gaMusic <- Genetic.evolve 50 20    -- 50 generacija, populacija 20
-    writeMidiFile "ga_output.mid" gaMusic
+    -- constraint kompozicija uz genetski algoritam
+    putStrLn "Generiranje glazbe s genetskim algoritmom..."
 
-    -- read test
-    -- readMidi "FurElise.mid" >>= \m ->
-    --    maybe (putStrLn "Error reading FurElise.mid.") play m
+    gaMusic <- Genetic.evolve 50 20
+
+    let spec = Constraint.CompositionSpec
+            { Constraint.basePattern = gaMusic
+            , Constraint.constraints = [Constraint.InKey C]
+            }
+
+    case Constraint.solveComposition spec of
+            Left err -> putStrLn $ "Constraint error: " ++ err
+            Right music -> writeMidiFile "final_output.mid" music

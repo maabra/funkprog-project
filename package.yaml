@@ -17,3 +17,4 @@ executables:
     main: mainmidi.hs
     other-modules:
       - Genetic
+      - Constraint

@@ -33,6 +33,7 @@ randomMelody = replicateM melodyLen randomPitch
 
 randomPopulation :: Int -> IO Population
 randomPopulation n = replicateM n randomMelody
+
 {-
 -- | major skala, ali to je samo da se ne bi zezali sa invalidnim notama
 randomPitch :: IO Pitch
@@ -75,6 +76,22 @@ mutate m = do
     newp <- randomPitch
     return $ take idx m ++ [newp] ++ drop (idx + 1) m
 
+-- | nextgen, isti princip kao prije, fokus na lenght pop i lenght elites da se ne racuna svaki put, nego samo jednom, i onda se koristi u petlji
+nextGeneration :: Population -> IO Population
+nextGeneration pop = do
+    let popSize = length pop
+        eliteCount = popSize `div` 2
+        elites = selectBest pop eliteCount
+
+    children <- replicateM (popSize - eliteCount) $ do
+        i <- randomRIO (0, eliteCount - 1)
+        j <- randomRIO (0, eliteCount - 1)
+        child <- crossover (elites !! i) (elites !! j)
+        mutate child
+
+    return (elites ++ children)
+
+{-
 -- | generira novu generaciju: zadrzava najbolje melodije (elites) i popunjava ostatak populacije djecom nastalom crossoverom i mutacijom
 nextGeneration :: Population -> IO Population
 nextGeneration pop = do
@@ -85,6 +102,7 @@ nextGeneration pop = do
         child <- crossover (elites !! i) (elites !! j)
         mutate child
     return $ elites ++ children
+-}
 
 -- | loop, koji ponavlja proces evolucije za zadani broj generacija
 evolve :: Int     -- ^ generacije
