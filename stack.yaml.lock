@@ -18,6 +18,20 @@ packages:
       size: 1818
   original:
     hackage: PortMidi-0.2.0.0@sha256:0671e36ec72e95138bf396234b205864a8a6d0ee353e09e01cbfd57004c56f40,2383
+- completed:
+    hackage: sbv-10.9@sha256:13b7c9fb2883798047ddaf7bf4ceb60edd3b638a4b3231fcc1fefe1b9d8ad43b,23715
+    pantry-tree:
+      sha256: 27383e61627e6023474ddc551f641bb54bcce4d07decb063e1ebe899f8245f90
+      size: 72604
+  original:
+    hackage: sbv-10.9
+- completed:
+    hackage: libBF-0.6.8@sha256:076f8dc0d33299c40afa2d0bfe51e93420c9c3e326ebfcac4f0e856152aa4f87,2503
+    pantry-tree:
+      sha256: b3950685f0ef81018241b8d2a518f440a6148658507341708dc0c81a3e19c1ff
+      size: 794
+  original:
+    hackage: libBF-0.6.8@sha256:076f8dc0d33299c40afa2d0bfe51e93420c9c3e326ebfcac4f0e856152aa4f87,2503
 snapshots:
 - completed:
     sha256: 85d2382958c178491d3fe50d770a624621f5ab456beef7d31ac7521f780c9bc7

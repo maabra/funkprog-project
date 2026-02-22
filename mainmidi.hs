@@ -21,19 +21,30 @@ writeMidiFile fp m = do
     putStrLn $ "Writing MIDI to " ++ fp
     Genetic.writeMusic fp m
     play m
-    
+
 main :: IO ()
 main = do
-    -- constraint kompozicija uz genetski algoritam
     putStrLn "Generiranje glazbe s genetskim algoritmom..."
+    generateUntilValid 1
 
-    gaMusic <- Genetic.evolve 50 20
 
-    let spec = Constraint.CompositionSpec
-            { Constraint.basePattern = gaMusic
-            , Constraint.constraints = [Constraint.InKey C]
-            }
+generateUntilValid :: Int -> IO ()
+generateUntilValid attempt
+    | attempt > 10000 = putStrLn "Neuspjelo nakon 10000 pokusaja."
+    | otherwise = do
+        putStrLn $ "Pokusaj broj" ++ show attempt
 
-    case Constraint.solveComposition spec of
-            Left err -> putStrLn $ "Constraint error: " ++ err
-            Right music -> writeMidiFile "final_output.mid" music
+        gaMusic <- Genetic.evolve 50 20
+
+        let spec = Constraint.CompositionSpec
+                { Constraint.basePattern = gaMusic
+                , Constraint.constraints = [Constraint.InKey C]
+                }
+
+        case Constraint.solveComposition spec of
+            Left _ -> generateUntilValid (attempt + 1)
+
+            Right music -> do
+                let filename = "v1_final_output_no_" ++ show attempt ++ ".mid"
+                writeMidiFile filename music
+                putStrLn $ "Uspjeh na pokusaju #" ++ show attempt

@@ -42,12 +42,12 @@ getBinDir, getLibDir, getDynLibDir, getDataDir, getLibexecDir, getSysconfDir :: 
 
 
 bindir, libdir, dynlibdir, datadir, libexecdir, sysconfdir :: FilePath
-bindir     = "C:\\Users\\Abra PC\\funkprog-project base\\funkprog-project\\.stack-work\\install\\94792004\\bin"
-libdir     = "C:\\Users\\Abra PC\\funkprog-project base\\funkprog-project\\.stack-work\\install\\94792004\\lib\\x86_64-windows-ghc-9.4.7\\funkprog-project-0.1.0.0-GhzjSEZ2baGBjAXPtSCks6-funkprog-project"
-dynlibdir  = "C:\\Users\\Abra PC\\funkprog-project base\\funkprog-project\\.stack-work\\install\\94792004\\lib\\x86_64-windows-ghc-9.4.7"
-datadir    = "C:\\Users\\Abra PC\\funkprog-project base\\funkprog-project\\.stack-work\\install\\94792004\\share\\x86_64-windows-ghc-9.4.7\\funkprog-project-0.1.0.0"
-libexecdir = "C:\\Users\\Abra PC\\funkprog-project base\\funkprog-project\\.stack-work\\install\\94792004\\libexec\\x86_64-windows-ghc-9.4.7\\funkprog-project-0.1.0.0"
-sysconfdir = "C:\\Users\\Abra PC\\funkprog-project base\\funkprog-project\\.stack-work\\install\\94792004\\etc"
+bindir     = "C:\\Users\\Abra PC\\funkprog-project base\\funkprog-project\\.stack-work\\install\\f42e5b6a\\bin"
+libdir     = "C:\\Users\\Abra PC\\funkprog-project base\\funkprog-project\\.stack-work\\install\\f42e5b6a\\lib\\x86_64-windows-ghc-9.4.7\\funkprog-project-0.1.0.0-JlSBLDfkfQ15W3Wm6kiTZ-funkprog-project"
+dynlibdir  = "C:\\Users\\Abra PC\\funkprog-project base\\funkprog-project\\.stack-work\\install\\f42e5b6a\\lib\\x86_64-windows-ghc-9.4.7"
+datadir    = "C:\\Users\\Abra PC\\funkprog-project base\\funkprog-project\\.stack-work\\install\\f42e5b6a\\share\\x86_64-windows-ghc-9.4.7\\funkprog-project-0.1.0.0"
+libexecdir = "C:\\Users\\Abra PC\\funkprog-project base\\funkprog-project\\.stack-work\\install\\f42e5b6a\\libexec\\x86_64-windows-ghc-9.4.7\\funkprog-project-0.1.0.0"
+sysconfdir = "C:\\Users\\Abra PC\\funkprog-project base\\funkprog-project\\.stack-work\\install\\f42e5b6a\\etc"
 
 getBinDir     = catchIO (getEnv "funkprog_project_bindir")     (\_ -> return bindir)
 getLibDir     = catchIO (getEnv "funkprog_project_libdir")     (\_ -> return libdir)

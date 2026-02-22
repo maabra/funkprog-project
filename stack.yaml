@@ -10,5 +10,6 @@ packages:
 extra-deps:
   - Euterpea-2.0.7@sha256:fa8471fe67f0cf4cd7b54e4aa51a044923d9af03e80d019ba010656f84dde817,2683
   - PortMidi-0.2.0.0@sha256:0671e36ec72e95138bf396234b205864a8a6d0ee353e09e01cbfd57004c56f40,2383
-
+  - sbv-10.9
+  - libBF-0.6.8@sha256:076f8dc0d33299c40afa2d0bfe51e93420c9c3e326ebfcac4f0e856152aa4f87,2503
 # You can add more settings (flags, etc.) if needed.

@@ -1,20 +1,30 @@
-name:                funkprog-project
-version:             0.1.0.0
-synopsis:            Algoritamska glazbena kompozicija
-
-description: |
-  Algoritamska glazbena kompozicija s genetskim algoritmima i zadovoljenjem ograničenja u Haskellu.
+name: funkprog-project
+version: 0.1.0.0
+synopsis: Algoritamska glazbena kompozicija
+description: Algoritamska glazbena kompozicija s genetskim algoritmima i zadovoljenjem ograničenja u Haskellu.
 
 dependencies:
   - base >=4.7 && <5
   - Euterpea
-  - midi
   - HCodecs
+  - midi
   - random
+  - sbv
 
 executables:
   funkprog-project:
     main: mainmidi.hs
+    source-dirs: .
     other-modules:
       - Genetic
       - Constraint
+    ghc-options:
+      - -threaded
+      - -rtsopts
+      - -with-rtsopts=-N
+
+library:
+  source-dirs: .
+  exposed-modules:
+    - Genetic
+    - Constraint

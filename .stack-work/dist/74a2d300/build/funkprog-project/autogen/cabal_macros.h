@@ -60,6 +60,16 @@
   (major1) == 1 && (major2) <  2 || \
   (major1) == 1 && (major2) == 2 && (minor) <= 1)
 #endif /* MIN_VERSION_random */
+/* package sbv-10.9 */
+#ifndef VERSION_sbv
+#define VERSION_sbv "10.9"
+#endif /* VERSION_sbv */
+#ifndef MIN_VERSION_sbv
+#define MIN_VERSION_sbv(major1,major2,minor) (\
+  (major1) <  10 || \
+  (major1) == 10 && (major2) <  9 || \
+  (major1) == 10 && (major2) == 9 && (minor) <= 0)
+#endif /* MIN_VERSION_sbv */
 
 /* tool gcc-14.0.6 */
 #ifndef TOOL_VERSION_gcc
@@ -133,7 +143,7 @@
 #endif /* MIN_TOOL_VERSION_runghc */
 
 #ifndef CURRENT_COMPONENT_ID
-#define CURRENT_COMPONENT_ID "funkprog-project-0.1.0.0-GhzjSEZ2baGBjAXPtSCks6-funkprog-project"
+#define CURRENT_COMPONENT_ID "funkprog-project-0.1.0.0-JlSBLDfkfQ15W3Wm6kiTZ-funkprog-project"
 #endif /* CURRENT_COMPONENT_ID */
 #ifndef CURRENT_PACKAGE_VERSION
 #define CURRENT_PACKAGE_VERSION "0.1.0.0"
