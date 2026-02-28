@@ -3,7 +3,8 @@
 
 module Constraint where
 
-import Euterpea
+import Euterpea hiding (pcToInt) -- izbjegavamo konflikt s funkcijom pcToInt u SMT solveru
+import qualified Euterpea as E
 import Data.SBV
 import Data.SBV.Control
 import Control.Monad (forM)
@@ -35,7 +36,6 @@ intToPc n = case n `mod` 12 of
   _  -> C
 
 -- skala (Major)
-
 majorScale :: PitchClass -> [Integer]
 majorScale root =
   let r = pcToInt root
@@ -43,18 +43,16 @@ majorScale root =
   in map (\i -> (r + i) `mod` 12) intervals
 
 -- constraint tipovi
-
 data MusicConstraint
   = InKey PitchClass
   | MelodyLength Int
   deriving (Show, Eq)
 
 -- SMT Solver koristeći SBV (Z3 backend)
-
 solveMelody :: Int -> [MusicConstraint] -> IO (Either String (Music Pitch))
 solveMelody n constraints = runSMT $ do
 
-  -- n simboličkih nota (pitch class 0-11)
+  -- n simbolickih nota (pitch class 0-11)
   notes <- forM [1..n] $ \i ->
       sInteger ("note" ++ show i)
 
@@ -67,33 +65,32 @@ solveMelody n constraints = runSMT $ do
   query $ do
     cs <- checkSat
     case cs of
-      Unsat -> return $ Left "No solution"
+      Unsat -> return $ Left "Nema rjesenja"
       Sat -> do
         vals <- mapM getValue notes
         return $ Right (buildMusic vals)
 
 -- primjena constrainta
-
 applyConstraint :: [SInteger] -> MusicConstraint -> Symbolic ()
-
 applyConstraint notes (InKey root) = do
   let scale = majorScale root
   mapM_ (\p -> constrain $ sOr [p .== literal x | x <- scale]) notes
 
-applyConstraint notes (MelodyLength n) =
-  constrain $ literal (length notes) .== literal n
+applyConstraint notes (MelodyLength n) = do
+  -- length notes vraca Int, treba nam Integer za SBV
+  let actualLen = fromIntegral (length notes) :: Integer
+      expectedLen = fromIntegral n :: Integer
+  constrain $ literal actualLen .== literal expectedLen
 
--- gradnja Euterpea glazbe iz rješenja
-
+-- gradnja Euterpea glazbe iz rjesenja
 buildMusic :: [Integer] -> Music Pitch
 buildMusic pcs =
-  line $ map (\pc -> note qn (intToPc pc, 4)) pcs
+  E.line $ map (\pc -> E.note E.qn (intToPc pc, 4)) pcs
 
 -- TEST
-
 example :: IO ()
 example = do
   result <- solveMelody 8 [InKey C]
   case result of
     Left err -> putStrLn err
-    Right music -> writeMidi "output.mid" music
+    Right music -> E.writeMidi "output.mid" music
