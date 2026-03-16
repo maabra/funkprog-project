@@ -9,6 +9,7 @@ import Codec.Midi (importFile)
 import qualified Genetic
 import qualified Constraint
 import Control.Monad (when)
+import System.Environment (setEnv)
 
 readMidi :: FilePath -> IO (Maybe Music1)
 readMidi path =
@@ -25,6 +26,7 @@ writeMidiFile fp m = do
 
 main :: IO ()
 main = do
+    setEnv "SBV_Z3" "./z3-4.16.0-x64-win/bin/z3.exe"
     -- putStrLn "Generiranje glazbe s genetskim algoritmom..."
     -- generateUntilValid 1
 
