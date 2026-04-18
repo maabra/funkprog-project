@@ -253,8 +253,8 @@ Uz Z3 se traži vrijednosti koje zadovoljavaju sva ograničenja.
 
 1. Genetski algoritam generira kandidata
 2. SMT solver provjerava je zadovoljava li ograničenja
-3. Ako jest: sprema se kao rezultat
-4. Ako nije: iterira se iznova s novim kandidatom
+- ako jest: sprema se kao rezultat
+- ako nije: iterira se iznova s novim kandidatom
 
 ---
 
