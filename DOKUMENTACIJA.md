@@ -2,8 +2,6 @@
 
 **Autori:** Matej Abramović (0303090408), Loris Lukić (0303090567), Daniel Vorić (0303096417)
 
-**Programski jezik:** Haskell
-
 ---
 
 ## Sadržaj
@@ -102,14 +100,14 @@ Implementira genetski algoritam za evoluciju melodija:
 
 - **Pitch**: predstavlja glazbenu notu (tonska klasa + oktava)
 - **Melody**: lista nota koje čine melodiju
-- **Population**: skup melodija koje se evolviraju
+- **Population**: skup melodija koje se evoluiraju
 
 **Ključne funkcije:**
 - `randomPitch()`: generira nasumičnu notu iz major skale
 - `randomMelody()`: kreira nasumičnu melodiju od 8 nota
 - `fitness()`: evaluira kvalitetu melodije
-  - nagrađema za male intervale između susjednih nota (koherentnost)
-  - kaznjena za velike skokove
+  - nagrađena za male intervale između susjednih nota (tj. koherentnost)
+  - kažnjena za velike skokove
 - `evolve()`: izvršava evoluciju kroz generacije
 
 **Proces:**
@@ -158,7 +156,7 @@ Koristi samo Z3 solver s definiranim ograničenjima, brži za male melodije i ga
 
 3. **Samo Genetski algoritam**
 
-Koristi samo genetsku evoluciju bez provjere ograničenja, ima brž proces ali bez garantiranja glazbenih pravila. Također je koristan za eksperimentiranje.
+Koristi samo genetsku evoluciju bez provjere ograničenja, ima brži proces ali bez garantiranja glazbenih pravila. Također je koristan za eksperimentiranje.
 
 ---
 
@@ -207,6 +205,7 @@ Koristiti bilo koji MIDI player:
 Kreira se populacija od 50 nasumičnih melodija, a svaka melodija sadrži 8 nota iz C major skale.
 
 **2. Evaluacija (Fitness)**
+
 ```
 fitness(melodija) = broj intervalnih skokova ≤ 2 polutona
 ```
@@ -232,17 +231,21 @@ Proces se ponavlja kroz 20 generacija.
 ### SMT Solver - Detaljni proces
 
 **1. Definiranje varijabli**
-- varijable za svaku notu (tj. cijeli brojevi 0-11)
+
+Varijable za svaku notu (tj. cijeli brojevi 0-11).
 
 **2. Definiranje ograničenja**
+
 ```
-ForAll i: nota[i] ∈ majorScale(tonalnost)
+ForAll i: nota[i] ∈ majorScale (tonalitet)
 ```
 
 **3. Rješavanje**
-- uz Z3 se traži vrijednosti koje zadovoljavaju sva ograničenja
+
+Uz Z3 se traži vrijednosti koje zadovoljavaju sva ograničenja.
 
 **4. Povratna vrijednost**
+
 - ako je zadovoljivo: vraća pronađenu melodiju
 - ako je nezadovoljivo: vraća grešku
 
@@ -251,7 +254,7 @@ ForAll i: nota[i] ∈ majorScale(tonalnost)
 1. Genetski algoritam generira kandidata
 2. SMT solver provjerava je zadovoljava li ograničenja
 3. Ako jest: sprema se kao rezultat
-4. Ako nije: iterira se znova s novim kandidatom
+4. Ako nije: iterira se iznova s novim kandidatom
 
 ---
 
@@ -275,6 +278,7 @@ Iako su rezultati obećavajući, naravno, kao i uvijek postoji prostor za pobolj
 - fleksibilnija kontrola nad tonalitetima
 - duže melodije
 - učenje iz primjera kroz strojno učenje
+- bolje varijacije glazbe i uočavanje istih
 
 ---
 
