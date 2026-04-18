@@ -34,7 +34,6 @@ Kombiniranjem ova dva pristupa, sustav generira glazbene skladbe koje su istovre
 1. istraživati primjenu genetskih algoritama za evoluciju glazbenih skladbi kroz procese slične prirodnoj selekciji
 2. implementirati SMT solver za osiguravanje skladanja u skladu s glazbenim ograničenjima (npr. tonalitet)
 3. kombinirati oba pristupa za poboljšanu kvalitetu generirane glazbe
-4. evaluirati performanse i kvalitetu rezultata u odnosu na pojedinačne pristupe
 
 ### Glavni naputci
 
@@ -62,7 +61,7 @@ Omogućuje rad s notama, akordima i glazbenim sekvencama i pruža funkcionalnost
 
 - **Haskore**: funkcionalni moduli za glazbu (korišteno u primjerima)
 
-Služi za kreiranje, analiziranje i manupuliranje glazbom
+Služi za kreiranje, analiziranje i manupuliranje glazbom u Haskellu pomoću raznih modula.
 
 ### SMT solver
 
@@ -156,7 +155,7 @@ Koristi samo Z3 solver s definiranim ograničenjima, brži za male melodije i ga
 
 3. **Samo Genetski algoritam**
 
-Koristi samo genetsku evoluciju bez provjere ograničenja, ima brži proces ali bez garantiranja glazbenih pravila. Također je koristan za eksperimentiranje.
+Koristi samo genetsku evoluciju bez provjere ograničenja, također ima brži proces ali bez garantiranja glazbenih pravila. Također je koristan za eksperimentiranje.
 
 ---
 
@@ -210,7 +209,7 @@ Kreira se populacija od 50 nasumičnih melodija, a svaka melodija sadrži 8 nota
 fitness(melodija) = broj intervalnih skokova ≤ 2 polutona
 ```
 
-Nagrađuje koherentne melodije s malim skokom između nota, i s druge strane kažnjavaju se preskakanja koja čine melodiju "neuobičajenom".
+Nagrađuje koherentne melodije s malim skokom između nota, s druge strane kažnjavaju se preskakanja koja čine melodiju "neuobičajenom".
 
 **3. Selekcija**
 
@@ -252,7 +251,7 @@ Uz Z3 se traži vrijednosti koje zadovoljavaju sva ograničenja.
 ### Kombiniran pristup
 
 1. Genetski algoritam generira kandidata
-2. SMT solver provjerava je zadovoljava li ograničenja
+2. SMT solver provjerava zadovoljava li ograničenja
 - ako jest: sprema se kao rezultat
 - ako nije: iterira se iznova s novim kandidatom
 
