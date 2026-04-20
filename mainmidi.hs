@@ -83,14 +83,14 @@ generateUntilValid attempt
         -- rjesenje sa SMT solverom koristeci genetsku melodiju kao pocetnu tocku
         putStrLn "  Pokrecem SMT solver za pronalazenje rjesenja..."
         -- result <- solveMelody 8 [InKey C]
-        result <- Constraint.solveMelody 8 [Constraint.InKey C]  -- <- koristi C iz Euterpea
+        result <- Constraint.solveMelody 8 [Constraint.InKey C, Constraint.Diverse]  -- diverse constraint za raznolikost
         
         case result of
             Left err -> do
                 putStrLn $ "SMT solver nije pronasao rjesenje: " ++ err
                 putStrLn "Pokusavam s manje nota..."
                 -- result2 <- solveMelody 4 [InKey C]
-                result2 <- Constraint.solveMelody 4 [Constraint.InKey C]
+                result2 <- Constraint.solveMelody 4 [Constraint.InKey C, Constraint.Diverse]
                 case result2 of
                     Left err2 -> do
                         putStrLn $ "Ni s manje nota neuspjesno: " ++ err2
@@ -111,14 +111,14 @@ generateSMTOnly = do
     putStrLn "\n Samo SMT solver (Z3) "
     putStrLn "Pokrecem SMT solver za melodiju od 8 nota u C-duru..."
     -- result <- solveMelody 8 [InKey C]
-    result <- Constraint.solveMelody 8 [Constraint.InKey C]
+    result <- Constraint.solveMelody 8 [Constraint.InKey C, Constraint.Diverse]
     
     case result of
         Left err -> do
             putStrLn $ "Greska: " ++ err
             putStrLn "Pokusavam s jednostavnijim ogranicenjima (4 note)..."
             -- result2 <- solveMelody 4 [InKey C]
-            result2 <- Constraint.solveMelody 4 [Constraint.InKey C]
+            result2 <- Constraint.solveMelody 4 [Constraint.InKey C, Constraint.Diverse]
             case result2 of
                 Left err2 -> putStrLn $ "Ponovno neuspjesno: " ++ err2
                 Right music -> do
@@ -152,7 +152,7 @@ generateMultiple n = do
     where
     generateOne i = do
         putStrLn $ "Generiranje melodije #" ++ show i
-        result <- Constraint.solveMelody 8 [Constraint.InKey C]
+        result <- Constraint.solveMelody 8 [Constraint.InKey C, Constraint.Diverse]
         case result of
             Left err -> do
                 putStrLn $ "  Neuspjeh: " ++ err

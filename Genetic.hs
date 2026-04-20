@@ -7,7 +7,7 @@ import Euterpea
 -- | import Codec.Midi (exportFile)
 import System.Random (randomRIO)
 import Control.Monad (replicateM, foldM)
-import Data.List (sortOn)
+import Data.List (sortOn, nub)
 
 type Melody = [Pitch]
 type Population = [Melody]
@@ -43,11 +43,17 @@ randomPitch = do
     return (pc, oct)
 -}
 
--- | fitness, poboljsani, isti princip
+-- | fitness, poboljsani, penalizira monotoniju i nagraduje raznolikost
 fitness :: Melody -> Double
-fitness m = fromIntegral $ length $ filter id $ zipWith smallInterval m (tail m)
-  where
-    smallInterval p1 p2 = abs (absPitch p1 - absPitch p2) <= 2
+fitness m = 
+    let smallIntervals = length $ filter id $ zipWith smallInterval m (tail m)
+        identicalNotes = length $ filter id $ zipWith (==) m (tail m)
+        variety = length $ nub m  -- broj jedinstvenih nota
+        monotonyPenalty = fromIntegral identicalNotes * 0.5
+        varietyBonus = fromIntegral variety * 0.3
+    in fromIntegral smallIntervals - monotonyPenalty + varietyBonus
+    where
+    smallInterval p1 p2 = abs (absPitch p1 - absPitch p2) <= 3
 
 -- | descending, da se najbolje melodije nalaze na pocetku liste
 selectBest :: Population -> Int -> Population
@@ -56,7 +62,7 @@ selectBest pop n = take n $ reverse $ sortOn fitness pop
 -- | bazicni fitness, koji nagraduje melodije koje imaju male intervale izmedu susjednih nota (<= 2 polutona), da je muzikalno
 fitness :: Melody -> Double
 fitness m = fromIntegral $ sum $ zipWith score m (tail m)
-  where
+    where
     score :: Pitch -> Pitch -> Int
     score (pc1, o1) (pc2, o2)
         | abs (absPitch (pc1, o1) - absPitch (pc2, o2)) <= 2 = 1
@@ -69,12 +75,18 @@ crossover a b = do
     point <- randomRIO (1, melodyLen - 1)
     return $ take point a ++ drop point b
 
--- | mutiranje, mijenja jednu notu u melodiji na random poziciji
+-- | mutiranje, mijenja jednu ili dvije note u melodiji na random pozicijama za vecu raznolikost
 mutate :: Melody -> IO Melody
 mutate m = do
-    idx <- randomRIO (0, melodyLen - 1)
-    newp <- randomPitch
-    return $ take idx m ++ [newp] ++ drop (idx + 1) m
+    mutationCount <- randomRIO (1, 2)  -- mutira 1-2 note umjesto samo 1
+    mutateSeveral m mutationCount
+    where
+    mutateSeveral melody 0 = return melody
+    mutateSeveral melody n = do
+        idx <- randomRIO (0, melodyLen - 1)
+        newp <- randomPitch
+        let mutated = take idx melody ++ [newp] ++ drop (idx + 1) melody
+        mutateSeveral mutated (n - 1)
 
 -- | nextgen, isti princip kao prije, fokus na lenght pop i lenght elites da se ne racuna svaki put, nego samo jednom, i onda se koristi u petlji
 nextGeneration :: Population -> IO Population
@@ -106,8 +118,8 @@ nextGeneration pop = do
 
 -- | loop, koji ponavlja proces evolucije za zadani broj generacija
 evolve :: Int     -- ^ generacije
-       -> Int     -- ^ popSize
-       -> IO (Music Pitch)
+    -> Int     -- ^ popSize
+    -> IO (Music Pitch)
 evolve gens popSize = do
     pop0 <- randomPopulation popSize
     finalPop <- foldM (\pop _ -> nextGeneration pop) pop0 [1..gens]
