@@ -255,10 +255,10 @@ Vas izbor (1/2/3/4):
 
 ### Opis načina generiranja
 
-1. **Genetski algoritam + SMT solver (preporučeno)**: Kombinira evolucijski pristup s matematičkim ograničenjima za najbolju kvalitetu
-2. **Samo SMT solver (Z3)**: Koristi matematička ograničenja za generiranje melodija u skladu s glazbenim pravilima
-3. **Samo genetski algoritam**: Evoluirajuća populacija melodija bez strogih matematičkih ograničenja
-4. **Više eksperimenata**: Generira 5 različitih melodija koristeći SMT solver za testiranje varijacija
+1. **Genetski algoritam + SMT solver (preporučeno)** - kombinira evolucijski pristup s matematičkim ograničenjima za najbolju kvalitetu, koristi Genetic.hs i Constraint.hs
+2. **Samo SMT solver (Z3)** - koristi matematička ograničenja za generiranje melodija u skladu s glazbenim pravilima, tj. koristi samo Constraint.hs
+3. **Samo genetski algoritam** - evoluirajuća populacija melodija bez strogih matematičkih ograničenja, koristi samo Genetic.hs
+4. **Više eksperimenata** - generira 5 različitih melodija koristeći SMT solver za testiranje varijacija, po specificnim varijablama iterira po Constraint.hs
 
 ### Reprodukcija MIDI datoteka
 
