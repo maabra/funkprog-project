@@ -222,7 +222,7 @@ Obrađuje ishod solvera: ispisuje poruku u slučaju greške ili sprema i reprodu
 
 3. **Samo Genetski algoritam**
 
-Koristi samo genetsku evoluciju bez provjere ograničenja, ima brži proces ali bez garantiranja glazbenih pravila. Također je koristan za eksperimentiranje.
+Koristi samo genetsku evoluciju bez provjere ograničenja, također ima brži proces ali bez garantiranja glazbenih pravila. Također je koristan za eksperimentiranje.
 
 ---
 
@@ -280,7 +280,7 @@ Kreira se populacija od 50 nasumičnih melodija, a svaka melodija sadrži 8 nota
 fitness(melodija) = broj intervalnih skokova ≤ 2 polutona
 ```
 
-Nagrađuje koherentne melodije s malim skokom između nota, i s druge strane kažnjavaju se preskakanja koja čine melodiju "neuobičajenom".
+Nagrađuje koherentne melodije s malim skokom između nota, s druge strane kažnjavaju se preskakanja koja čine melodiju "neuobičajenom".
 
 **3. Selekcija**
 
