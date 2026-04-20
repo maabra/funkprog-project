@@ -34,13 +34,15 @@ main = do
     putStrLn "1 - Genetski algoritam + SMT solver (preporuceno)"
     putStrLn "2 - Samo SMT solver (Z3)"
     putStrLn "3 - Samo genetski algoritam"
-    putStr "Vas izbor (1/2/3): "
+    putStrLn "4 - Vise eksperimenata"
+    putStr "Vas izbor (1/2/3/4): "
     choice <- getLine
     
     case choice of
         "1" -> generateWithSMT
         "2" -> generateSMTOnly
         "3" -> generateGeneticOnly
+        "4" -> generateMultiple 5  -- pomocna funkcija za vise eksperimenata
         _   -> putStrLn "Neispravan izbor"
 
 
@@ -96,7 +98,7 @@ generateUntilValid attempt
                         putStrLn $ "Ni s manje nota neuspjesno: " ++ err2
                         generateUntilValid (attempt + 1)
                     Right music -> do
-                        let filename = "v2_final_output_no_" ++ show attempt ++ ".mid"
+                        let filename = "gen_and_smt_" ++ show attempt ++ ".mid"
                         writeMidiFile filename music
                         putStrLn $ "uspjeh na pokusaju #" ++ show attempt
             
@@ -142,7 +144,8 @@ generateGeneticOnly = do
     writeMidiFile filename gaMusic
     putStrLn "Melodija spremljena!"
 
--- pomocna funkcija za vise eksperimenata
+
+-- pomocna funkcija za vise eksperimenata {--}
 generateMultiple :: Int -> IO ()
 generateMultiple n = do
     putStrLn $ "Generiranje " ++ show n ++ " melodija..."
