@@ -118,6 +118,26 @@ Implementira genetski algoritam za evoluciju melodija:
 5. nasumično mijenjamo dio nota (mutacija)
 6. ponavljamo kroz 20 generacija
 
+**Druge funkcije:**
+- `identicalNotes = length $ filter id $ zipWith (==) m (tail m)`
+  - broji uzastopne identične note i omogućuje da se monotonija kazni u fitness funkciji.
+- `mutationCount <- randomRIO (1, 2)` i `mutateSeveral m mutationCount`
+  - nasumično bira koliko će nota biti mutirano u jednoj melodiji.
+- `take idx m ++ [newp] ++ drop (idx + 1) m`
+  - zamjenjuje notu na poziciji `idx` novom notom `newp` bez mijenjanja ostatka melodije.
+- `randomPopulation n = replicateM n randomMelody`
+  - stvara populaciju od `n` nasumičnih melodija pozivajući `randomMelody` više puta.
+- `selectBest pop n = take n $ reverse $ sortOn fitness pop`
+  - sortira populaciju po `fitness` vrijednosti i uzima najbolje `n` melodija kao elitnu skupinu.
+- `crossover a b = do
+    point <- randomRIO (1, melodyLen - 1)
+    return $ take point a ++ drop point b`
+  - spaja dva roditelja uz nasumično odabranu točku, uzimajući početak prve i kraj druge melodije.
+- `children <- replicateM (popSize - eliteCount) ...`
+  - generira ostale melodije u populaciji ponavljanjem postupka crossover + mutacija.
+- `finalPop <- foldM (\pop _ -> nextGeneration pop) pop0 [1..gens]`
+  - petlja koja ponavlja evolucijski korak `nextGeneration` kroz zadani broj generacija, gradeći novu populaciju iz prethodne.
+
 #### **Constraint.hs** - SMT solver i ograničenja
 
 Koristi Z3 SMT solver preko SBV biblioteke za osiguranje glazbenih pravila:
@@ -125,10 +145,12 @@ Koristi Z3 SMT solver preko SBV biblioteke za osiguranje glazbenih pravila:
 - **MusicConstraint**: enumeracija mogućih ograničenja
   - `InKey PitchClass`: glazba mora biti u određenoj tonalnosti
   - `MelodyLength Int`: duljina melodije
+  - `Diverse`: dodatno ograničenje da se spriječe uzastopne identične note i potakne raznolikost
 
 **Ključne funkcije:**
 - `majorScale()`: vraća sve note u određenoj "major" skali
 - `solveMelody()`: koristi Z3 solver da generira melodiju od N nota koja zadovoljava ograničenja
+- `applyConstraint()`: primjenjuje `MusicConstraint` pravila, uključujući raznolikost
 - `pcToInt()`: mapira glazbene tonske klase na brojeve (0-11)
 - `intToPc()`: inverzna konverzija
 
@@ -137,8 +159,26 @@ Koristi Z3 SMT solver preko SBV biblioteke za osiguranje glazbenih pravila:
 2. definiramo ograničenja:
    - svaka nota mora biti dio tonalnosti (npr. C major)
    - note se nalaze unutar razumnog raspon octava
+   - `Diverse` ograničenje sprječava uzastopne identične note i potiče raznolikost
 3. Z3 solver provjerava zadovoljenost i pronalazi rješenje
 4. vraćamo pronađenu melodiju ili grešku
+
+**Druge funkcije:**
+- `notes <- forM [1..n] $ \i -> sInteger ("note" ++ show i)`
+  - stvara `n` simboličkih varijabli koje predstavljaju note u melodiji.
+- `mapM_ (\p -> constrain $ p .>= 0 .&& p .<= 11) notes`
+  - ograničava sve note na vrijednosti između 0 i 11, što odgovara pitch class rasponu.
+- `mapM_ (applyConstraint notes) constraints`
+  - primjenjuje svaki od zadanih ograničenja na istu grupu simboličkih nota.
+- `query $ do ... cs <- checkSat ...`
+  - pokreće SMT solver i provjerava je li zadatak zadovoljiv; rezultat može biti `Sat` ili `Unsat`.
+- `vals <- mapM getValue notes`
+  - čita konkretne vrijednosti koje je solver pronašao za svaku simboličku notu.
+- `buildMusic pcs = E.line $ map (\pc -> E.note E.qn (intToPc pc, 4)) pcs`
+  - pretvara rješenje solvera u Euterpea melodiju s kvartnim notama u oktavi 4.
+- `applyConstraint notes Diverse`
+  - primjenjuje dodatno pravilo da susjedne note ne mogu biti identične, čime se potiče raznolikost u rezultirajućoj melodiji.
+
 
 #### **mainmidi.hs** - glavna aplikacija
 
@@ -152,7 +192,19 @@ Generira melodiju genetskim algoritmom, zatim provjerava je sa Z3 solverom. Ako 
 
 2. **Samo SMT solver (Z3)**
 
-Koristi samo Z3 solver s definiranim ograničenjima, brži za male melodije i garantira zadovoljenje ograničenja.
+Koristi samo Z3 solver s definiranim ograničenjima, uključujući `Diverse` ograničenje za raznolikost melodije; brži je za male melodije i garantira zadovoljenje ograničenja.
+
+> U kodu `mainmidi.hs` sada se pozivaju `solveMelody` funkcije s kombinacijom `[Constraint.InKey C, Constraint.Diverse]` kako bi se spriječile uzastopne identične note.
+
+**Druge funkcije:**
+- `choice <- getLine`
+  - čita korisnički unos iz konzole za odabir načina generiranja.
+- `case choice of ...`
+  - odlučuje koji način generiranja pokrenuti na temelju korisničkog unosa.
+- `result <- Constraint.solveMelody 8 [Constraint.InKey C, Constraint.Diverse]`
+  - traži melodiju od 8 nota koja zadovoljava tonalitet C i raznolikost.
+- `case result of Left err -> ... Right music -> ...`
+  - obrađuje ishod solvera: ispisuje poruku u slučaju greške ili sprema i reproducira pronađenu glazbu.
 
 3. **Samo Genetski algoritam**
 

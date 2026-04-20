@@ -75,8 +75,9 @@ crossover a b = do
     point <- randomRIO (1, melodyLen - 1)
     return $ take point a ++ drop point b
 
--- | mutiranje, mijenja jednu ili dvije note u melodiji na random pozicijama za vecu raznolikost
+-- | mutiranje, mijenja jednu notu u melodiji na random poziciji
 mutate :: Melody -> IO Melody
+{-
 mutate m = do
     mutationCount <- randomRIO (1, 2)  -- mutira 1-2 note umjesto samo 1
     mutateSeveral m mutationCount
@@ -87,6 +88,11 @@ mutate m = do
         newp <- randomPitch
         let mutated = take idx melody ++ [newp] ++ drop (idx + 1) melody
         mutateSeveral mutated (n - 1)
+-}
+mutate m = do
+    idx <- randomRIO (0, melodyLen - 1)
+    newp <- randomPitch
+    return $ take idx m ++ [newp] ++ drop (idx + 1) m
 
 -- | nextgen, isti princip kao prije, fokus na lenght pop i lenght elites da se ne racuna svaki put, nego samo jednom, i onda se koristi u petlji
 nextGeneration :: Population -> IO Population

@@ -83,7 +83,8 @@ applyConstraint notes (MelodyLength n) = do
       expectedLen = fromIntegral n :: Integer
   constrain $ literal actualLen .== literal expectedLen
 
--- Diverse constraint: zabrana uzastopnih identičnih nota + minimum različitih nota
+-- Diverse constraint: zabrana uzastopnih identičnih nota
+{-
 applyConstraint notes Diverse = do
   -- zabrana susjednih identičnih nota
   mapM_ (\(n1, n2) -> constrain $ n1 .!= n2) (zip notes (tail notes))
@@ -92,6 +93,10 @@ applyConstraint notes Diverse = do
       minVariety = (fromIntegral n + 1) `div` 2 :: Integer
   distinctCount <- sInteger "distinctCount"
   constrain $ distinctCount .>= literal minVariety
+-}
+applyConstraint notes Diverse = do
+  -- zabrana susjednih identičnih nota
+  mapM_ (\(n1, n2) -> constrain $ sNot (n1 .== n2)) (zip notes (tail notes))
 
 -- gradnja Euterpea glazbe iz rjesenja
 buildMusic :: [Integer] -> Music Pitch
