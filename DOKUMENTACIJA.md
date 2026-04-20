@@ -345,7 +345,7 @@ Iako su rezultati obećavajući, naravno, kao i uvijek postoji prostor za pobolj
 
 ---
 
-## Literatura i Izvori
+## Literatura
 
 - Genetic Algorithm članak: https://sciendo.com/article/10.2478/amns.2023.2.00070
 - Algorithmic Composition as CSP članak: https://www.hinojosachapel.com/data/texts/algorithmic_composition_as_a_csp.pdf
