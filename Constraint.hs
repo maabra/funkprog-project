@@ -46,6 +46,7 @@ majorScale root =
 data MusicConstraint
   = InKey PitchClass
   | MelodyLength Int
+  | Diverse  -- force variety in melody
   deriving (Show, Eq)
 
 -- SMT Solver koristeći SBV (Z3 backend)
@@ -81,6 +82,21 @@ applyConstraint notes (MelodyLength n) = do
   let actualLen = fromIntegral (length notes) :: Integer
       expectedLen = fromIntegral n :: Integer
   constrain $ literal actualLen .== literal expectedLen
+
+-- Diverse constraint: zabrana uzastopnih identičnih nota
+{-
+applyConstraint notes Diverse = do
+  -- zabrana susjednih identičnih nota
+  mapM_ (\(n1, n2) -> constrain $ n1 .!= n2) (zip notes (tail notes))
+  -- minimum 50% različitih nota
+  let n = length notes
+      minVariety = (fromIntegral n + 1) `div` 2 :: Integer
+  distinctCount <- sInteger "distinctCount"
+  constrain $ distinctCount .>= literal minVariety
+-}
+applyConstraint notes Diverse = do
+  -- zabrana susjednih identičnih nota
+  mapM_ (\(n1, n2) -> constrain $ sNot (n1 .== n2)) (zip notes (tail notes))
 
 -- gradnja Euterpea glazbe iz rjesenja
 buildMusic :: [Integer] -> Music Pitch

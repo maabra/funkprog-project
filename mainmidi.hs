@@ -34,13 +34,15 @@ main = do
     putStrLn "1 - Genetski algoritam + SMT solver (preporuceno)"
     putStrLn "2 - Samo SMT solver (Z3)"
     putStrLn "3 - Samo genetski algoritam"
-    putStr "Vas izbor (1/2/3): "
+    putStrLn "4 - Vise eksperimenata"
+    putStr "Vas izbor (1/2/3/4): "
     choice <- getLine
     
     case choice of
         "1" -> generateWithSMT
         "2" -> generateSMTOnly
         "3" -> generateGeneticOnly
+        "4" -> generateMultiple 5  -- pomocna funkcija za vise eksperimenata
         _   -> putStrLn "Neispravan izbor"
 
 
@@ -83,20 +85,20 @@ generateUntilValid attempt
         -- rjesenje sa SMT solverom koristeci genetsku melodiju kao pocetnu tocku
         putStrLn "  Pokrecem SMT solver za pronalazenje rjesenja..."
         -- result <- solveMelody 8 [InKey C]
-        result <- Constraint.solveMelody 8 [Constraint.InKey C]  -- <- koristi C iz Euterpea
+        result <- Constraint.solveMelody 8 [Constraint.InKey C, Constraint.Diverse]  -- diverse constraint za raznolikost
         
         case result of
             Left err -> do
                 putStrLn $ "SMT solver nije pronasao rjesenje: " ++ err
                 putStrLn "Pokusavam s manje nota..."
                 -- result2 <- solveMelody 4 [InKey C]
-                result2 <- Constraint.solveMelody 4 [Constraint.InKey C]
+                result2 <- Constraint.solveMelody 4 [Constraint.InKey C, Constraint.Diverse]
                 case result2 of
                     Left err2 -> do
                         putStrLn $ "Ni s manje nota neuspjesno: " ++ err2
                         generateUntilValid (attempt + 1)
                     Right music -> do
-                        let filename = "v2_final_output_no_" ++ show attempt ++ ".mid"
+                        let filename = "gen_and_smt_" ++ show attempt ++ ".mid"
                         writeMidiFile filename music
                         putStrLn $ "uspjeh na pokusaju #" ++ show attempt
             
@@ -111,14 +113,14 @@ generateSMTOnly = do
     putStrLn "\n Samo SMT solver (Z3) "
     putStrLn "Pokrecem SMT solver za melodiju od 8 nota u C-duru..."
     -- result <- solveMelody 8 [InKey C]
-    result <- Constraint.solveMelody 8 [Constraint.InKey C]
+    result <- Constraint.solveMelody 8 [Constraint.InKey C, Constraint.Diverse]
     
     case result of
         Left err -> do
             putStrLn $ "Greska: " ++ err
             putStrLn "Pokusavam s jednostavnijim ogranicenjima (4 note)..."
             -- result2 <- solveMelody 4 [InKey C]
-            result2 <- Constraint.solveMelody 4 [Constraint.InKey C]
+            result2 <- Constraint.solveMelody 4 [Constraint.InKey C, Constraint.Diverse]
             case result2 of
                 Left err2 -> putStrLn $ "Ponovno neuspjesno: " ++ err2
                 Right music -> do
@@ -142,7 +144,8 @@ generateGeneticOnly = do
     writeMidiFile filename gaMusic
     putStrLn "Melodija spremljena!"
 
--- pomocna funkcija za vise eksperimenata
+
+-- pomocna funkcija za vise eksperimenata {--}
 generateMultiple :: Int -> IO ()
 generateMultiple n = do
     putStrLn $ "Generiranje " ++ show n ++ " melodija..."
@@ -152,7 +155,7 @@ generateMultiple n = do
     where
     generateOne i = do
         putStrLn $ "Generiranje melodije #" ++ show i
-        result <- Constraint.solveMelody 8 [Constraint.InKey C]
+        result <- Constraint.solveMelody 8 [Constraint.InKey C, Constraint.Diverse]
         case result of
             Left err -> do
                 putStrLn $ "  Neuspjeh: " ++ err
