@@ -1,13 +1,19 @@
 {-# LANGUAGE DeriveAnyClass #-}
 {-# LANGUAGE DeriveGeneric  #-}
 
-module Constraint where
-
+module Constraint
+  ( solveMelody
+  , solveMelodyWithSeed
+  , extractPCs
+  , MusicConstraint(..)
+  ) where
 import Euterpea hiding (pcToInt) -- izbjegavamo konflikt s funkcijom pcToInt u SMT solveru
 import qualified Euterpea as E
 import Data.SBV
 import Data.SBV.Control
 import Control.Monad (forM, when)
+import System.Random (randomRIO)
+import Data.List (tails)
 
 {-
 solveComposition :: CompositionSpec -> SolveResult
@@ -54,26 +60,41 @@ data MusicConstraint
 
 -- SMT Solver koristeći SBV (Z3 backend)
 solveMelody :: Int -> [MusicConstraint] -> IO (Either String (Music Pitch))
-solveMelody n constraints = runSMT $ do
+solveMelody n constraints = tryRandom 1000000 1
+  where
+    root = getRoot constraints
 
-  -- n simbolickih nota (pitch class 0-11)
-  notes <- forM [1..n] $ \i ->
-      sInteger ("note" ++ show i)
+    tryRandom 0 _ = return $ Left "Nije pronadena validna melodija nakon 1000 pokusaja"
 
-  -- svaka nota mora biti 0-11
-  mapM_ (\p -> constrain $ p .>= 0 .&& p .<= 11) notes
+    tryRandom k attempt = do
+      putStrLn $ "Pokusaj " ++ show attempt ++ " / 1000"
 
-  -- primjena constrainta
+      m <- rngMelody n root   -- ✅ FIXED
+      let vals = extractPCs m
+      ok <- checkMelody vals constraints
+
+      if ok
+        then do
+          putStrLn $ "Pronadena solucija nakon " ++ show attempt
+          return (Right m)
+        else tryRandom (k - 1) (attempt + 1)
+
+
+solveMelodyWithSeed :: [Integer] -> [MusicConstraint] -> IO (Either String (Music Pitch))
+solveMelodyWithSeed seed constraints = runSMT $ do
+
+  notes <- forM (zip [1..] seed) $ \(i, v) -> do
+      p <- sInteger ("note" ++ show i)
+      constrain $ p .== literal v   -- forsiranje note iz genetske melodije kao pocetne tocke
+      return p
+
   mapM_ (applyConstraint notes) constraints
 
   query $ do
     cs <- checkSat
     case cs of
-      Unsat -> return $ Left "Nema rjesenja"
-      Sat -> do
-        vals <- mapM getValue notes
-        return $ Right (buildMusic vals)
-
+      Unsat -> return $ Left "GA melodija ne zadovoljava sve constrainte"
+      Sat   -> return $ Right (buildMusic seed)
 -- primjena constrainta
 applyConstraint :: [SInteger] -> MusicConstraint -> Symbolic ()
 applyConstraint notes (InKey root) = do
@@ -100,43 +121,77 @@ applyConstraint notes Diverse = do
   constrain $ distinctCount .>= literal minVariety
 -}
 
+
 applyConstraint notes Diverse = do
   -- zabrana susjednih identičnih nota
   mapM_ (\(n1, n2) -> constrain $ sNot (n1 .== n2)) (zip notes (tail notes))
 
 -- MaxStep: ograničava maksimalni interval između uzastopnih nota
 applyConstraint notes (MaxStep maxVal) = do
-  let pairs = zip notes (tail notes)
-  mapM_ (\(n1, n2) -> constrain $ sOr 
-        [ n2 .== n1 + literal (fromIntegral maxVal)
-        , n2 .== n1 - literal (fromIntegral maxVal)
-        , sNot (n1 .== n2)  -- ili ista nota
-        ]) pairs
+  let maxV = literal (fromIntegral maxVal)
+  mapM_ (\(n1, n2) ->
+    constrain $ sAbs (n2 - n1) .<= maxV
+    ) (zip notes (tail notes))
 
 -- MinStep: osigurava minimalni interval između uzastopnih nota (za raznolikost)
 applyConstraint notes (MinStep minVal) = do
-  let pairs = zip notes (tail notes)
-      minValInt = fromIntegral minVal :: Integer
-  mapM_ (\(n1, n2) -> constrain $ 
-        sOr [ sNot (n1 .== n2)  -- različite note
-            , sAnd [ n2 .== n1 + literal i | i <- [-minValInt..minValInt] ]  -- ili minimalan pomak
-            ]) pairs
+  let minV = literal (fromIntegral minVal)
+  mapM_ (\(n1, n2) ->
+    constrain $ sAbs (n2 - n1) .>= minV
+    ) (zip notes (tail notes))
 
 -- MotifLength: osigurava varijaciju u frazama (svaka N nota mora biti različita)
-applyConstraint notes (MotifLength motifLen) = do
-  let totalNotes = length notes
-      indices = [0, motifLen .. totalNotes - 1]
-  mapM_ (\i -> do
-    let segment = take motifLen (drop i notes)
-    when (length segment >= 2) $ do
-      mapM_ (\(n1, n2) -> constrain $ sNot (n1 .== n2)) 
-            (zip segment (tail segment))
-    ) indices
+applyConstraint notes (MotifLength m) = do
+  let total = length notes
 
+  sequence_
+    [ constrain (a ./= b)
+    | i <- [0, m .. total - m]
+    , let segment = take m (drop i notes)
+    , (a:rest) <- tails segment
+    , b <- rest
+    ]
+    
 -- gradnja Euterpea glazbe iz rjesenja
 buildMusic :: [Integer] -> Music Pitch
 buildMusic pcs =
   E.line $ map (\pc -> E.note E.qn (intToPc pc, 4)) pcs
+
+-- RNG melodija: nasumična melodija od n nota u zadanoj ljestvici
+rngMelody :: Int -> PitchClass -> IO (Music Pitch)
+rngMelody n root = do
+  let scale = majorScale root
+  notes <- sequence $ replicate n $ do
+    r <- randomRIO (0, length scale - 1)
+    return $ scale !! r
+  return $ E.line $ map (\pc -> E.note E.qn (intToPc pc, 4)) notes
+
+checkMelody :: [Integer] -> [MusicConstraint] -> IO Bool
+checkMelody vals constraints = runSMT $ do
+  notes <- forM (zip [1..] vals) $ \(i, v) -> do
+    p <- sInteger ("note" ++ show i)
+    constrain $ p .== literal v
+    return p
+
+  mapM_ (applyConstraint notes) constraints
+
+  query $ do
+    cs <- checkSat
+    return (cs == Sat)
+
+extractPCs :: Music Pitch -> [Integer]
+extractPCs (Prim (Note _ (pc, _))) = [pcToInt pc]
+extractPCs (m1 :+: m2) = extractPCs m1 ++ extractPCs m2
+extractPCs _ = []
+
+sAbs :: SInteger -> SInteger
+sAbs x = ite (x .>= 0) x (-x)
+
+getRoot :: [MusicConstraint] -> PitchClass
+getRoot constraints =
+  case [r | InKey r <- constraints] of
+    (r:_) -> r
+    []    -> C  -- default if none provided
 {-
 -- TEST
 example :: IO ()

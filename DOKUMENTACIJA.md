@@ -83,146 +83,175 @@ funkprog-project/
 
 #### **Genetic.hs** - genetski algoritam
 
-Implementira genetski algoritam za evoluciju melodija. Prvi je "Pitch" koji predstavlja glazbenu notu (tonska klasa + oktava), zatim "Melody" što je lista nota koje čine melodiju i na kraju "Population" - skup melodija koje se evoluiraju.
+Implementira genetski algoritam za evoluciju melodija. Koristi tipove `Pitch` (tonska klasa + oktava), `Melody` (lista nota) i `Population` (skup melodija).
 
 **Ključne funkcije:**
 
-`randomPitch()` - generira nasumičnu notu iz major skale
+`randomPitch()` - generira nasumičnu notu iz chromatic skale (sve 12 note) u oktavama 4-5
 
 `randomMelody()` - kreira nasumičnu melodiju od 8 nota
 
-`fitness()` - evaluira kvalitetu melodije (nagrađena za male intervale između susjednih nota (tj. koherentnost), kažnjena za velike skokove) 
+`fitness()` - poboljšana fitness funkcija koja nagrađuje:
+- male intervale (≤2 polutona) → +2 boda
+- srednje intervale (3-7 polutona) → +1 bod
+- velike intervale (>7 polutona) → -1 bod
+- identične uzastopne note → -2 boda
+- raznolikost nota → bonus ovisno o broju jedinstvenih nota
 
-`evolve()` - izvršava evoluciju kroz generacije
+`evolve()` - glavna funkcija koja pokreće evoluciju kroz zadani broj generacija
 
 **Proces:**
 
-1. kreiramo inicijalnu populaciju od 50 nasumičnih melodija
+1. kreiramo inicijalnu populaciju od n nasumičnih melodija
 2. za svaku melodiju računamo fitness vrijednost
-3. odabiramo najbolje melodije (selekcija)
-4. kombiniramo dijelove melodija (crossover)
-5. nasumično mijenjamo dio nota (mutacija)
-6. ponavljamo kroz 20 generacija
+3. odabiramo najbolje melodije (top 50% kao elite)
+4. kombiniramo dijelove melodija (crossover) nasumičnom točkom
+5. nasumično mijenjamo jednu notu (mutacija)
+6. ponavljamo kroz zadani broj generacija
+7. vraćamo najbolju melodiju pretvorenu u Euterpea glazbu
 
 **Druge funkcije:**
 
-`identicalNotes = length $ filter id $ zipWith (==) m (tail m)`
-Broji uzastopne identične note i omogućuje da se monotonija kazni u fitness funkciji.
+`randomPopulation n = replicateM n randomMelody` -  stvara populaciju od "n" nasumičnih melodija.
 
-`mutationCount <- randomRIO (1, 2)` i `mutateSeveral m mutationCount`
-Nasumično bira koliko će nota biti mutirano u jednoj melodiji.
+`selectBest pop n = take n $ reverse $ sortOn fitness pop` - sortira populaciju po "fitness" vrijednosti (descending) i uzima najbolje "n" melodija.
 
-`take idx m ++ [newp] ++ drop (idx + 1) m`
-Zamjenjuje notu na poziciji "idx" novom notom "newp" bez mijenjanja ostatka melodije.
+`crossover a b = do` - spaja dva roditelja uz nasumično odabranu točku (single-point crossover).
 
-`randomPopulation n = replicateM n randomMelody`
-Stvara populaciju od "n" nasumičnih melodija pozivajući "randomMelody" više puta.
+`mutate m = do` - mijenja jednu notu u melodiji na nasumičnoj poziciji.
 
-`selectBest pop n = take n $ reverse $ sortOn fitness pop`
-Sortira populaciju po "fitness" vrijednosti i uzima najbolje "n" melodija kao elitnu skupinu.
+`nextGeneration pop = do` - generira novu populaciju: zadržava elite, ostalo su kombinacije crossover + mutacija.
 
-`crossover a b = do
-    point <- randomRIO (1, melodyLen - 1)
-    return $ take point a ++ drop point b`
-Spaja dva roditelja uz nasumično odabranu točku, uzimajući početak prve i kraj druge melodije.
+`melodyToMusic = line . map (note qn)` - konvertira listu pitcheva u Euterpea glazbu s kvartnim notama.
 
-`children <- replicateM (popSize - eliteCount) ...`
-Generira ostale melodije u populaciji ponavljanjem postupka crossover + mutacija.
-
-`finalPop <- foldM (\pop _ -> nextGeneration pop) pop0 [1..gens]`
-Petlja koja ponavlja evolucijski korak "nextGeneration" kroz zadani broj generacija, gradeći novu populaciju iz prethodne.
+`writeMusic = writeMidi` - sprema glazbu kao MIDI datoteku.
 
 
 #### **Constraint.hs** - SMT solver i ograničenja
 
-Koristi Z3 SMT solver preko SBV biblioteke za osiguranje glazbenih pravila.
+Koristi Z3 SMT solver preko SBV biblioteke za osiguranje glazbenih pravila. Modul izvozi ključne funkcije: `solveMelody`, `solveMelodyWithSeed`, `extractPCs` i tip `MusicConstraint`.
 
-MusicConstraint je enumeracija mogućih ograničenja. Sastoji se od:
+**MusicConstraint tipovi:**
 
-`InKey PitchClass` - glazba mora biti u određenoj tonalnosti
+`InKey PitchClass` - melodija mora biti u zadanoj tonalnosti (C, G, D, F, A, E)
 
-`MelodyLength Int` - duljina melodije
+`Diverse` - zabrana uzastopnih identičnih nota
 
-`Diverse` - dodatno ograničenje da se spriječe uzastopne identične note i potakne raznolikost
+`MaxStep Int` - maksimalni interval između uzastopnih nota (u polutonima)
+
+`MinStep Int` - minimalni interval između uzastopnih nota (za raznolikost)
+
+`MotifLength Int` - osigurava da svaka N nota bude različita (varijacija u frazama)
 
 **Ključne funkcije:**
 
-`majorScale()` - vraća sve note u određenoj "major" skali
+`pcToInt()` - mapira PitchClass na brojeve 0-11 (C=0, Cs=1, ..., B=11)
 
-`solveMelody()` - koristi Z3 solver da generira melodiju od N nota koja zadovoljava ograničenja
+`intToPc()` - inverzna konverzija iz broja u PitchClass
 
-`applyConstraint()` - primjenjuje "MusicConstraint" pravila, uključujući raznolikost
+`majorScale root` - vraća listu integers (0-11) za major skalu od zadanog root-a
 
-`pcToInt()` - mapira glazbene tonske klase na brojeve (0-11)
+`solveMelody n constraints` - generira nasumičnu melodiju od n nota i provjerava je li zadovoljava zadana ograničenja (pokušava do 1000 puta)
 
-`intToPc()` - inverzna konverzija
+`solveMelodyWithSeed seed constraints` - koristi genetsku melodiju kao početnu točku (seed) i pokušava pronaći rješenje koje zadovoljava ograničenja
 
-**Proces:**
+`extractPCs music` - ekstrahira pitch class vrijednosti iz Euterpea glazbe u listu integers
 
-1. kreiramo SMT varijable za svaku notu u melodiji
-2. definiramo ograničenja:
-   a) svaka nota mora biti dio tonalnosti (npr. C major)
-   b) note se nalaze unutar razumnog raspon octava
-   c) "diverse" ograničenje sprječava uzastopne identične note i potiče raznolikost
-3. Z3 solver provjerava zadovoljenost i pronalazi rješenje
-4. vraćamo pronađenu melodiju ili grešku
+`checkMelody vals constraints` - provjerava zadovoljava li melodija zadana ograničenja
+
+`rngMelody n root` - generira nasumičnu melodiju od n nota u zadanoj ljestvici (koristi System.Random)
+
+`buildMusic pcs` - konvertira listu integers u Euterpea glazbu s kvartnim notama u oktavi 4
+
+**Proces (solveMelody):**
+
+1. generiraj nasumičnu melodiju od n nota u zadanoj tonalnosti (rngMelody)
+2. ekstrahiraj pitch class vrijednosti (extractPCs)
+3. provjeri zadovoljava li melodija sva ograničenja (checkMelody)
+4. ako da → vrati melodiju, ako ne → ponovi (do 1000 pokušaja)
+
+**Proces (solveMelodyWithSeed):**
+
+1. kreiraj SMT varijable za svaku notu iz seed-a
+2. forsiraj te vrijednosti kao početne (constrain $ p .== literal v)
+3. primjeni sva ograničenja (InKey, Diverse, MaxStep, MinStep, MotifLength)
+4. pokreni Z3 solver (checkSat)
+5. ako Sat → vrati seed melodiju, ako Unsat → vrati grešku
 
 **Druge funkcije:**
 
-`notes <- forM [1..n] $ \i -> sInteger ("note" ++ show i)`
-Stvara `n` simboličkih varijabli koje predstavljaju note u melodiji.
+`applyConstraint notes (InKey root)` - osigurava da sve note budu u major skali zadanog root-a
 
-`mapM_ (\p -> constrain $ p .>= 0 .&& p .<= 11) notes`
-Ograničava sve note na vrijednosti između 0 i 11, što odgovara pitch class rasponu.
+`applyConstraint notes Diverse` - zabrana susjednih identičnih nota (sNot (n1 .== n2))
 
-`mapM_ (applyConstraint notes) constraints`
-Primjenjuje svaki od zadanih ograničenja na istu grupu simboličkih nota.
+`applyConstraint notes (MaxStep maxVal)` - ograničava maksimalni apsolutni interval (sAbs (n2 - n1) .<= maxV)
 
-`query $ do ... cs <- checkSat ...`
-Pokreće SMT solver i provjerava je li zadatak zadovoljiv, onda rezultat može biti "Sat" ili "Unsat".
+`applyConstraint notes (MinStep minVal)` - ograničava minimalni apsolutni interval (sAbs (n2 - n1) .>= minV)
 
-`vals <- mapM getValue notes`
-Čita konkretne vrijednosti koje je solver pronašao za svaku simboličku notu.
+`applyConstraint notes (MotifLength m)` - osigurava da svaka grupa od m uzastopnih nota ima sve različite note
 
-`buildMusic pcs = E.line $ map (\pc -> E.note E.qn (intToPc pc, 4)) pcs`
-Pretvara rješenje solvera u Euterpea melodiju s kvartnim notama u oktavi 4.
-
-`applyConstraint notes Diverse`
-Primjenjuje dodatno pravilo da susjedne note ne mogu biti identične, čime se potiče raznolikost u rezultirajućoj melodiji.
+`getRoot constraints` - ekstrahira root iz InKey constrainta ili vraća C kao default
 
 
-#### **mainmidi.hs** - glavna aplikacija
+#### **mainmidi.hs** - glavna aplikacija i korisničko sučelje
 
-Pruža korisničko sučelje i koordinira oba pristupa u tri načina generiranja:
+Glavna aplikacija koja pruža interaktivno korisničko sučelje i koordinira sva tri pristupa generiranju glazbe. Postavlja Z3 putanju i omogućuje korisniku odabir načina generiranja.
+
+**Ključne funkcije:**
+
+`main()` - glavna funkcija koja postavlja okruženje i prikazuje izbornik
+
+`readMidi path` - čita MIDI datoteku i vraća `Maybe Music1`
+
+`writeMidiFile fp m` - sprema glazbu kao MIDI i reproducira je
 
 **Tri načina generiranja:**
 
 1. **Genetski algoritam + SMT solver (preporučeno)**
 
-Generira melodiju genetskim algoritmom, zatim provjerava je sa Z3 solverom. Ako ne zadovoljava ograničenja, iterira iznova i na kraju sprema rezultat kao MIDI datoteku.
+`generateWithSMT()` - kombinirani pristup:
+- korisnik bira tonalitet (C, G, D, F, A, E)
+- korisnik bira MaxStep (3/5/7/12 polutona)
+- korisnik bira MinStep (1/2/3/0 polutona)
+- korisnik bira MotifLength (2/3/4 note)
+- generira melodiju genetskim algoritmom (100 populacija, 20 generacija)
+- ekstrahira pitch class vrijednosti (extractPCs)
+- poziva `solveMelodyWithSeed` za provjeru ograničenja
+- ako ne zadovoljava → iterira iznova (do 1,000 pokušaja)
+- sprema rezultat kao `v3_final_output_no_X.mid`
 
 2. **Samo SMT solver (Z3)**
 
-Koristi samo Z3 solver s definiranim ograničenjima, uključujući Diverse ograničenje za raznolikost melodije; brži je za male melodije i garantira zadovoljenje ograničenja. U kodu mainmidi.hs pozivaju se solveMelody funkcije s kombinacijom Constraint.InKey C i Constraint.Diverse kako bi se spriječile uzastopne identične note.
-
-**Druge funkcije:**
-
-`choice <- getLine`
-Čita korisnički unos iz konzole za odabir načina generiranja.
-
-`case choice of ...`
-Odlučuje koji način generiranja pokrenuti na temelju korisničkog unosa.
-
-`result <- Constraint.solveMelody 8 [Constraint.InKey C, Constraint.Diverse]`
-Traži melodiju od 8 nota koja zadovoljava tonalitet C i raznolikost.
-
-`case result of Left err -> ... Right music -> ...`
-Obrađuje ishod solvera: ispisuje poruku u slučaju greške ili sprema i reproducira pronađenu glazbu.
-
+`generateSMTOnly()` - direktni SMT pristup:
+- Korisnik bira tonalitet, MaxStep, MinStep, MotifLength
+- Poziva `solveMelody 8 [constraints]`
+- Sprema kao `smt_output.mid`
 
 3. **Samo Genetski algoritam**
 
-Koristi samo genetsku evoluciju bez provjere ograničenja, također ima brži proces ali bez garantiranja glazbenih pravila. Također je koristan za eksperimentiranje.
+`generateGeneticOnly()` - čisti evolucijski pristup:
+- Poziva `Genetic.evolve 100 20`
+- Sprema kao `gen_output.mid`
+
+**Pomoćne funkcije:**
+
+`generateUntilValid attempt key maxStep minStep motif` - rekurzivna funkcija koja iterira dok ne pronađe validnu melodiju
+
+`generateSMT key maxStep minStep motif` - direktno poziva SMT solver
+
+`writeMidiFile filename music` - zapisuje MIDI i reproducira glazbu
+
+**Interaktivni izbornik:**
+
+```
+Odaberite nacin generiranja glazbe:
+1 - Genetski algoritam + SMT solver (preporuceno)
+2 - Samo SMT solver (Z3)
+3 - Samo genetski algoritam
+Vas izbor (1/2/3):
+```
+
+Za svaki način postoji podizbornik za odabir tonaliteta i parametara:
 
 ---
 
@@ -240,24 +269,11 @@ stack build
 stack exec -- funkprog-project
 ```
 
-**Interaktivno sučelje:**
-
-Program će pitati koji način generiranja odabrati:
-
-```
-Odaberite nacin generiranja glazbe:
-1 - Genetski algoritam + SMT solver (preporuceno)
-2 - Samo SMT solver (Z3)
-3 - Samo genetski algoritam
-Vas izbor (1/2/3): 
-```
-
 ### Opis načina generiranja
 
 1. **Genetski algoritam + SMT solver (preporučeno)**: Kombinira evolucijski pristup s matematičkim ograničenjima za najbolju kvalitetu
 2. **Samo SMT solver (Z3)**: Koristi matematička ograničenja za generiranje melodija u skladu s glazbenim pravilima
 3. **Samo genetski algoritam**: Evoluirajuća populacija melodija bez strogih matematičkih ograničenja
-4. **Više eksperimenata**: Generira 5 različitih melodija koristeći SMT solver za testiranje varijacija
 
 ### Reprodukcija MIDI datoteka
 
@@ -271,55 +287,89 @@ Koristiti bilo koji MIDI player: Windows Media Player, Winamp, GarageBand, iTune
 
 **1. Inicijalizacija**
 
-Kreira se populacija od 50 nasumičnih melodija, a svaka melodija sadrži 8 nota iz C major skale.
+Kreira se populacija od n nasumičnih melodija (default: 100), a svaka melodija sadrži 8 nota iz chromatic skale (sve 12 note) u oktavama 4-5.
 
 **2. Evaluacija (Fitness)**
 
 ```
-fitness(melodija) = broj intervalnih skokova ≤ 2 polutona
+fitness(melodija) = Σ(ocjena intervala) - kazna za monotoniju + bonus za raznolikost
 ```
 
-Nagrađuje koherentne melodije s malim skokom između nota, s druge strane kažnjavaju se preskakanja koja čine melodiju "neuobičajenom".
+- male intervali (≤2 polutona) → +2 boda
+- srednji intervali (3-7 polutona) → +1 bod
+- veliki intervali (>7 polutona) → -1 bod
+- identične uzastopne note → -2 boda
+- raznolikost nota → bonus ovisno o broju jedinstvenih nota
 
 **3. Selekcija**
 
-Odabiru se najbolje melodije (top 50%).
+Odabiru se najbolje melodije (top 50%) kao elite.
 
 **4. Crossover**
 
-Kombiniraju se dijelovi dviju odabranih melodija.
+Kombiniraju se dijelovi dviju odabranih melodija nasumičnom točkom (single-point crossover).
 
 **5. Mutacija**
 
-Nasumično se mijenja 10% nota melodije.
+Nasumično se mijenja jedna nota u melodiji na nasumičnoj poziciji.
 
 **6. Iteracija**
 
-Proces se ponavlja kroz 20 generacija.
+Proces se ponavlja kroz zadani broj generacija (default: 20).
 
-### SMT Solver - detaljni proces
+### SMT Solver - detaljni proces (RNG pristup)
 
-**1. Definiranje varijabli**
+**1. RNG generacija**
 
-Varijable za svaku notu (tj. cijeli brojevi 0-11).
+Generira se nasumična melodija od n nota u zadanoj major ljestvici koristeći `randomRIO`.
 
-**2. Definiranje ograničenja**
+**2. Provjera ograničenja**
 
-```
-ForAll i: nota[i] ∈ majorScale (tonalitet)
-```
+Kreiraju se SMT varijable za svaku notu i forsiraju se vrijednosti iz RNG melodije, zatim se primjenjuju sva ograničenja:
+- InKey: note moraju biti u major skali
+- Diverse: zabrana uzastopnih identičnih nota
+- MaxStep: maksimalni interval između uzastopnih nota
+- MinStep: minimalni interval između uzastopnih nota
+- MotifLength: svaka grupa od N nota mora imati različite note
 
 **3. Rješavanje**
 
-Uz Z3 se traži vrijednosti koje zadovoljavaju sva ograničenja.
+Z3 solver provjerava zadovoljenost ograničenja (checkSat).
 
 **4. Povratna vrijednost**
 
-Ako je zadovoljivo vraća pronađenu melodiju, a ako je nezadovoljivo vraća grešku
+Ako je zadovoljivo vraća pronađenu melodiju, ako nije kreće novi pokušaj (do 1000 pokušaja).
+
+### SMT Solver - detaljni proces (seed pristup)
+
+**1. Seed iz genetskog algoritma**
+
+Ekstrahiraju se pitch class vrijednosti iz genetske melodije (`extractPCs`).
+
+**2. Forsiranje vrijednosti**
+
+Kreiraju se SMT varijable i forsiraju se vrijednosti iz seed-a.
+
+**3. Primjena ograničenja**
+
+Primjenjuju se sva ograničenja na simboličke note.
+
+**4. Rješavanje**
+
+Z3 solver provjerava zadovoljenost ograničenja.
+
+**5. Povratna vrijednost**
+
+Ako Sat → vraća se seed melodija, ako Unsat → vraća se greška.
 
 ### Kombiniran pristup
 
-Genetski algoritam generira kandidata, potom SMT solver provjerava je zadovoljava li ograničenja. Ako zadovoljava sprema se kao rezultat, a ako ne zadovoljava onda se iterira iznova s novim kandidatom.
+1. Korisnik bira tonalitet (C, G, D, F, A, E) i parametre (MaxStep, MinStep, MotifLength)
+2. Genetski algoritam generira melodiju (100 populacija, 20 generacija)
+3. Ekstrahiraju se pitch class vrijednosti iz genetske melodije
+4. `solveMelodyWithSeed` provjerava zadovoljava li melodija sva ograničenja
+5. Ako zadovoljava → sprema se kao MIDI datoteka
+6. Ako ne zadovoljava → iterira se s novom genetskom melodijom (do 1,000 pokušaja)
 
 ---
 
@@ -338,7 +388,7 @@ Genetski algoritam generira kandidata, potom SMT solver provjerava je zadovoljav
 
 ## Zaključak
 
-Ovaj projekt demonstrira kombiniranje **genetskih algoritama** i **SMT solvera** za automatsku glazbenu kompoziciju. Dok genetski algoritam osigurava raznolikost i koherentnost, SMT solver garantira teoretsku ispravnost glazbe.
+Ovaj projekt demonstrira kombiniranje genetskih algoritama i SMT solvera za automatsku glazbenu kompoziciju. Dok genetski algoritam osigurava raznolikost i koherentnost, SMT solver garantira teoretsku ispravnost glazbe.
 
 Iako su rezultati obećavajući, naravno, kao i uvijek postoji prostor za poboljšanja, primjerice: podrška za harmoniju i akorde, fleksibilnija kontrola nad tonalitetima, učenje iz primjera kroz strojno učenje, bolje varijacije glazbe i uočavanje istih
 

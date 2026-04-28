@@ -77,8 +77,8 @@ generateWithSMT = do
     putStrLn "2 - G (G-dur)"
     putStrLn "3 - D (D-dur)"
     putStrLn "4 - F (F-dur)"
-    putStrLn "5 - A (A-mol)"
-    putStrLn "6 - E (E-mol)"
+    putStrLn "5 - A (A-dur)"
+    putStrLn "6 - E (E-dur)"
     putStr "Vas izbor (1-6): "
     key <- getLine
     let pitch = case key of
@@ -122,35 +122,37 @@ generateWithSMT = do
     
     -- Odabir MotifLength (varijacija u frazama)
     putStrLn "\nOdaberite duljinu motiva (varijacija u frazama):"
-    putStrLn "1 - Kratko (4 note)"
-    putStrLn "2 - Srednje (6 nota)"
-    putStrLn "3 - Dugo (8 nota)"
+    putStrLn "1 - Kratko (2 note)"
+    putStrLn "2 - Srednje (3 nota)"
+    putStrLn "3 - Dugo (4 nota)"
     putStr "Vas izbor (1-3): "
     motifKey <- getLine
     let motifLen = case motifKey of
-            "1" -> Constraint.MotifLength 4
-            "2" -> Constraint.MotifLength 6
-            "3" -> Constraint.MotifLength 8
-            _   -> Constraint.MotifLength 4
+            "1" -> Constraint.MotifLength 2
+            "2" -> Constraint.MotifLength 3
+            "3" -> Constraint.MotifLength 4
+            _   -> Constraint.MotifLength 2
     
     putStrLn $ "Generiram u tonu: " ++ show pitch
     generateUntilValid 1 pitch maxStep minStep motifLen
 
 generateUntilValid :: Int -> Constraint.MusicConstraint -> Constraint.MusicConstraint -> Constraint.MusicConstraint -> Constraint.MusicConstraint -> IO ()
 generateUntilValid attempt keyConstraint maxStepConstraint minStepConstraint motifConstraint
-    | attempt > 1000 = putStrLn "Neuspjelo nakon 1000 pokusaja."
+    | attempt > 1000000 = putStrLn "Neuspjelo nakon 1000000 pokusaja."
     | otherwise = do
         putStrLn $ "Pokusaj #" ++ show attempt
         
         gaMusic <- Genetic.evolve 100 20
-        
+        let pcs = Constraint.extractPCs gaMusic
         -- rjesenje sa SMT solverom koristeci genetsku melodiju kao pocetnu tocku
         putStrLn "  Pokrecem SMT solver za pronalazenje rjesenja..."
-        result <- Constraint.solveMelody 20 [keyConstraint, Constraint.Diverse, maxStepConstraint, minStepConstraint, motifConstraint]
+        result <- Constraint.solveMelodyWithSeed pcs [keyConstraint, Constraint.Diverse, maxStepConstraint, minStepConstraint, motifConstraint]
         
         case result of
             Left err -> do
                 putStrLn $ "SMT solver nije pronasao rjesenje: " ++ err
+                generateUntilValid (attempt + 1) keyConstraint maxStepConstraint minStepConstraint motifConstraint
+
             Right music -> do
                 let filename = "v3_final_output_no_" ++ show attempt ++ ".mid"
                 writeMidiFile filename music
@@ -167,8 +169,8 @@ generateSMTOnly = do
     putStrLn "2 - G (G-dur)"
     putStrLn "3 - D (D-dur)"
     putStrLn "4 - F (F-dur)"
-    putStrLn "5 - A (A-mol)"
-    putStrLn "6 - E (E-mol)"
+    putStrLn "5 - A (A-dur)"
+    putStrLn "6 - E (E-dur)"
     putStr "Vas izbor (1-6): "
     key <- getLine
     let pitch = case key of
@@ -212,24 +214,24 @@ generateSMTOnly = do
     
     -- Odabir MotifLength
     putStrLn "\nOdaberite duljinu motiva (varijacija u frazama):"
-    putStrLn "1 - Kratko (4 note)"
-    putStrLn "2 - Srednje (6 nota)"
-    putStrLn "3 - Dugo (8 nota)"
+    putStrLn "1 - Kratko (2 note)"
+    putStrLn "2 - Srednje (3 nota)"
+    putStrLn "3 - Dugo (4 nota)"
     putStr "Vas izbor (1-3): "
     motifKey <- getLine
     let motifLen = case motifKey of
-            "1" -> Constraint.MotifLength 4
-            "2" -> Constraint.MotifLength 6
-            "3" -> Constraint.MotifLength 8
-            _   -> Constraint.MotifLength 4
+            "1" -> Constraint.MotifLength 2
+            "2" -> Constraint.MotifLength 3
+            "3" -> Constraint.MotifLength 4
+            _   -> Constraint.MotifLength 2
     
     putStrLn $ "Generiram u tonu: " ++ show pitch
     generateSMT pitch maxStep minStep motifLen
 
 generateSMT :: Constraint.MusicConstraint -> Constraint.MusicConstraint -> Constraint.MusicConstraint -> Constraint.MusicConstraint -> IO ()
 generateSMT keyConstraint maxStepConstraint minStepConstraint motifConstraint = do
-    putStrLn "Pokrecem SMT solver za melodiju od 20 nota..."
-    result <- Constraint.solveMelody 20 [keyConstraint, Constraint.Diverse, maxStepConstraint, minStepConstraint, motifConstraint]
+    putStrLn "Pokrecem SMT solver za melodiju od 8 nota..."
+    result <- Constraint.solveMelody 8 [keyConstraint, Constraint.Diverse, maxStepConstraint, minStepConstraint, motifConstraint]
     
     case result of
         Left err -> do
