@@ -13,7 +13,7 @@ type Melody = [Pitch]
 type Population = [Melody]
 
 melodyLen :: Int
-melodyLen = 8
+melodyLen = 20
 
 {-
 -- | rng gen za element iz liste

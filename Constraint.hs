@@ -7,7 +7,7 @@ import Euterpea hiding (pcToInt) -- izbjegavamo konflikt s funkcijom pcToInt u S
 import qualified Euterpea as E
 import Data.SBV
 import Data.SBV.Control
-import Control.Monad (forM)
+import Control.Monad (forM, when)
 
 {-
 solveComposition :: CompositionSpec -> SolveResult
@@ -45,8 +45,11 @@ majorScale root =
 -- constraint tipovi
 data MusicConstraint
   = InKey PitchClass
-  | MelodyLength Int
-  | Diverse  -- force variety in melody
+  -- | MelodyLength Int
+  | Diverse                    -- bez uzastopnih identičnih nota
+  | MaxStep Int                -- max interval između uzastopnih nota (za veće skokove)
+  | MinStep Int                -- min interval između uzastopnih nota (za raznolikost)
+  | MotifLength Int           -- duljina motiva/fraze za varijaciju
   deriving (Show, Eq)
 
 -- SMT Solver koristeći SBV (Z3 backend)
@@ -76,13 +79,15 @@ applyConstraint :: [SInteger] -> MusicConstraint -> Symbolic ()
 applyConstraint notes (InKey root) = do
   let scale = majorScale root
   mapM_ (\p -> constrain $ sOr [p .== literal x | x <- scale]) notes
+{- 
 
+-- neiskorišteni constraint za duljinu melodije, no duljina je prethodno definirana tako da je nepotrebna
 applyConstraint notes (MelodyLength n) = do
   -- length notes vraca Int, treba nam Integer za SBV
   let actualLen = fromIntegral (length notes) :: Integer
       expectedLen = fromIntegral n :: Integer
   constrain $ literal actualLen .== literal expectedLen
-
+-}
 -- Diverse constraint: zabrana uzastopnih identičnih nota
 {-
 applyConstraint notes Diverse = do
@@ -94,15 +99,45 @@ applyConstraint notes Diverse = do
   distinctCount <- sInteger "distinctCount"
   constrain $ distinctCount .>= literal minVariety
 -}
+
 applyConstraint notes Diverse = do
   -- zabrana susjednih identičnih nota
   mapM_ (\(n1, n2) -> constrain $ sNot (n1 .== n2)) (zip notes (tail notes))
+
+-- MaxStep: ograničava maksimalni interval između uzastopnih nota
+applyConstraint notes (MaxStep maxVal) = do
+  let pairs = zip notes (tail notes)
+  mapM_ (\(n1, n2) -> constrain $ sOr 
+        [ n2 .== n1 + literal (fromIntegral maxVal)
+        , n2 .== n1 - literal (fromIntegral maxVal)
+        , sNot (n1 .== n2)  -- ili ista nota
+        ]) pairs
+
+-- MinStep: osigurava minimalni interval između uzastopnih nota (za raznolikost)
+applyConstraint notes (MinStep minVal) = do
+  let pairs = zip notes (tail notes)
+      minValInt = fromIntegral minVal :: Integer
+  mapM_ (\(n1, n2) -> constrain $ 
+        sOr [ sNot (n1 .== n2)  -- različite note
+            , sAnd [ n2 .== n1 + literal i | i <- [-minValInt..minValInt] ]  -- ili minimalan pomak
+            ]) pairs
+
+-- MotifLength: osigurava varijaciju u frazama (svaka N nota mora biti različita)
+applyConstraint notes (MotifLength motifLen) = do
+  let totalNotes = length notes
+      indices = [0, motifLen .. totalNotes - 1]
+  mapM_ (\i -> do
+    let segment = take motifLen (drop i notes)
+    when (length segment >= 2) $ do
+      mapM_ (\(n1, n2) -> constrain $ sNot (n1 .== n2)) 
+            (zip segment (tail segment))
+    ) indices
 
 -- gradnja Euterpea glazbe iz rjesenja
 buildMusic :: [Integer] -> Music Pitch
 buildMusic pcs =
   E.line $ map (\pc -> E.note E.qn (intToPc pc, 4)) pcs
-
+{-
 -- TEST
 example :: IO ()
 example = do
@@ -110,3 +145,4 @@ example = do
   case result of
     Left err -> putStrLn err
     Right music -> E.writeMidi "output.mid" music
+-}
