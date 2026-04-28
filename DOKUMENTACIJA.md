@@ -249,8 +249,7 @@ Odaberite nacin generiranja glazbe:
 1 - Genetski algoritam + SMT solver (preporuceno)
 2 - Samo SMT solver (Z3)
 3 - Samo genetski algoritam
-4 - Vise eksperimenata
-Vas izbor (1/2/3/4): 
+Vas izbor (1/2/3): 
 ```
 
 ### Opis načina generiranja
@@ -341,7 +340,7 @@ Genetski algoritam generira kandidata, potom SMT solver provjerava je zadovoljav
 
 Ovaj projekt demonstrira kombiniranje **genetskih algoritama** i **SMT solvera** za automatsku glazbenu kompoziciju. Dok genetski algoritam osigurava raznolikost i koherentnost, SMT solver garantira teoretsku ispravnost glazbe.
 
-Iako su rezultati obećavajući, naravno, kao i uvijek postoji prostor za poboljšanja, primjerice: podrška za harmoniju i akorde, fleksibilnija kontrola nad tonalitetima, duže melodije, učenje iz primjera kroz strojno učenje, bolje varijacije glazbe i uočavanje istih
+Iako su rezultati obećavajući, naravno, kao i uvijek postoji prostor za poboljšanja, primjerice: podrška za harmoniju i akorde, fleksibilnija kontrola nad tonalitetima, učenje iz primjera kroz strojno učenje, bolje varijacije glazbe i uočavanje istih
 
 ---
 

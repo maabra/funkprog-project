@@ -142,7 +142,7 @@ generateUntilValid attempt keyConstraint maxStepConstraint minStepConstraint mot
     | otherwise = do
         putStrLn $ "Pokusaj #" ++ show attempt
         
-        gaMusic <- Genetic.evolve 50 20
+        gaMusic <- Genetic.evolve 100 20
         
         -- rjesenje sa SMT solverom koristeci genetsku melodiju kao pocetnu tocku
         putStrLn "  Pokrecem SMT solver za pronalazenje rjesenja..."
@@ -245,7 +245,7 @@ generateGeneticOnly = do
     putStrLn "\n Samo genetski algoritam "
     putStrLn "Generiranje melodije genetskim algoritmom..."
     
-    gaMusic <- Genetic.evolve 50 20
+    gaMusic <- Genetic.evolve 100 20 -- populacija 100, 20 generacija
     
     let filename = "gen_output.mid"
     writeMidiFile filename gaMusic
