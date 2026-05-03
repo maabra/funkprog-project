@@ -91,12 +91,9 @@ Implementira genetski algoritam za evoluciju melodija. Koristi tipove `Pitch` (t
 
 `randomMelody()` - kreira nasumičnu melodiju od 8 nota
 
-`fitness()` - poboljšana fitness funkcija koja nagrađuje:
-- male intervale (≤2 polutona) → +2 boda
-- srednje intervale (3-7 polutona) → +1 bod
-- velike intervale (>7 polutona) → -1 bod
-- identične uzastopne note → -2 boda
-- raznolikost nota → bonus ovisno o broju jedinstvenih nota
+`fitness()` - poboljšana fitness funkcija koja:
+- penalizira putem monotonyPenalty = fromIntegral identicalNotes * 0.5 
+- nagrađuje putem varietyBonus = fromIntegral variety * 0.3
 
 `evolve()` - glavna funkcija koja pokreće evoluciju kroz zadani broj generacija
 
