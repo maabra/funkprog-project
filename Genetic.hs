@@ -13,7 +13,7 @@ type Melody = [Pitch]
 type Population = [Melody]
 
 melodyLen :: Int
-melodyLen = 20
+melodyLen = 8
 
 {-
 -- | rng gen za element iz liste
@@ -23,8 +23,8 @@ elements xs = (xs !!) <$> randomRIO (0, length xs - 1)
 -- | generiranje random pitcheva, ogranicenje na major skali
 randomPitch :: IO Pitch
 randomPitch = do
-    let pitches = [C, D, E, F, G, A, B]
-    pc <- (pitches !!) <$> randomRIO (0, 6)
+    let pitches = [C, Cs, D, Ds, E, F, Fs, G, Gs, A, As, B]
+    pc <- (pitches !!) <$> randomRIO (0, length pitches - 1)
     oct <- randomRIO (4, 5)
     return (pc, oct)
 
@@ -45,15 +45,27 @@ randomPitch = do
 
 -- | fitness, poboljsani, penalizira monotoniju i nagraduje raznolikost
 fitness :: Melody -> Double
-fitness m = 
-    let smallIntervals = length $ filter id $ zipWith smallInterval m (tail m)
-        identicalNotes = length $ filter id $ zipWith (==) m (tail m)
-        variety = length $ nub m  -- broj jedinstvenih nota
-        monotonyPenalty = fromIntegral identicalNotes * 0.5
-        varietyBonus = fromIntegral variety * 0.3
-    in fromIntegral smallIntervals - monotonyPenalty + varietyBonus
+fitness m =
+    let intervals = zipWith (\p1 p2 -> abs (absPitch p1 - absPitch p2)) m (tail m) --izračun intervala između susjednih nota (u polutonovima)
+
+        scores = map goodStep intervals -- svakom intervalu dodjeljujemo “ocjenu” (koliko je dobar/loš)
+
+        identicalNotes = length $ filter (== -2) scores -- koliko ima ponavljanja istih nota (loše za melodiju)
+
+        variety = length $ nub m -- koliko različitih nota se pojavljuje u melodiji (raznolikost)
+
+        monotonyPenalty = fromIntegral identicalNotes * 0.5 -- kažnjavamo ponavljanje nota
+        varietyBonus = fromIntegral variety * 0.3 -- nagrađujemo raznolikost
+
+    in sum (map fromIntegral scores) -- konačna ocjena: zbroj ocjena intervala, minus kazna za monotoniju, plus bonus za raznolikost
+        - monotonyPenalty
+        + varietyBonus
     where
-    smallInterval p1 p2 = abs (absPitch p1 - absPitch p2) <= 3
+    goodStep interval -- funkcija koja ocjenjuje pojedini interval između dviju nota
+        | interval == 0 = -2    -- ista nota → loše (ponavljanje)
+        | interval <= 2 = 2     -- mali interval → dobro (glatka melodija)
+        | interval <= 7 = 1     -- srednji interval → prihvatljivo
+        | otherwise     = -1    -- veliki interval → loše (previše skokova)
 
 -- | descending, da se najbolje melodije nalaze na pocetku liste
 selectBest :: Population -> Int -> Population
