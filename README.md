@@ -15,4 +15,5 @@ Zadovoljenje ograničenja u skladanju glazbe koristi biblioteke kao što su Hask
 ## Izvori
 
 https://sciendo.com/article/10.2478/amns.2023.2.00070 - Genetski algoritam
+
 https://www.hinojosachapel.com/data/texts/algorithmic_composition_as_a_csp.pdf - Algoritam pomoću zadovoljenja ograničenja
