@@ -43,29 +43,17 @@ randomPitch = do
     return (pc, oct)
 -}
 
--- | fitness, poboljsani, penalizira monotoniju i nagraduje raznolikost
+-- | fitness, stari, penalizira monotoniju i nagraduje raznolikost
 fitness :: Melody -> Double
-fitness m =
-    let intervals = zipWith (\p1 p2 -> abs (absPitch p1 - absPitch p2)) m (tail m) --izračun intervala između susjednih nota (u polutonovima)
-
-        scores = map goodStep intervals -- svakom intervalu dodjeljujemo “ocjenu” (koliko je dobar/loš)
-
-        identicalNotes = length $ filter (== -2) scores -- koliko ima ponavljanja istih nota (loše za melodiju)
-
-        variety = length $ nub m -- koliko različitih nota se pojavljuje u melodiji (raznolikost)
-
-        monotonyPenalty = fromIntegral identicalNotes * 0.5 -- kažnjavamo ponavljanje nota
-        varietyBonus = fromIntegral variety * 0.3 -- nagrađujemo raznolikost
-
-    in sum (map fromIntegral scores) -- konačna ocjena: zbroj ocjena intervala, minus kazna za monotoniju, plus bonus za raznolikost
-        - monotonyPenalty
-        + varietyBonus
+fitness m = 
+    let smallIntervals = length $ filter id $ zipWith smallInterval m (tail m)
+        identicalNotes = length $ filter id $ zipWith (==) m (tail m)
+        variety = length $ nub m  -- broj jedinstvenih nota
+        monotonyPenalty = fromIntegral identicalNotes * 0.5
+        varietyBonus = fromIntegral variety * 0.3
+    in fromIntegral smallIntervals - monotonyPenalty + varietyBonus
     where
-    goodStep interval -- funkcija koja ocjenjuje pojedini interval između dviju nota
-        | interval == 0 = -2    -- ista nota → loše (ponavljanje)
-        | interval <= 2 = 2     -- mali interval → dobro (glatka melodija)
-        | interval <= 7 = 1     -- srednji interval → prihvatljivo
-        | otherwise     = -1    -- veliki interval → loše (previše skokova)
+    smallInterval p1 p2 = abs (absPitch p1 - absPitch p2) <= 3
 
 -- | descending, da se najbolje melodije nalaze na pocetku liste
 selectBest :: Population -> Int -> Population

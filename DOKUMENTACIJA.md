@@ -295,11 +295,7 @@ Kreira se populacija od n nasumičnih melodija (default: 100), a svaka melodija 
 fitness(melodija) = Σ(ocjena intervala) - kazna za monotoniju + bonus za raznolikost
 ```
 
-- male intervali (≤2 polutona) → +2 boda
-- srednji intervali (3-7 polutona) → +1 bod
-- veliki intervali (>7 polutona) → -1 bod
-- identične uzastopne note → -2 boda
-- raznolikost nota → bonus ovisno o broju jedinstvenih nota
+Melodija po kojoj se iterira dodaje se vrijednost ocjene samih intervala te se naknadno kažnjava za susjedne iste note i dobiva bonus na temelju različitosti susjednih nota.
 
 **3. Selekcija**
 
