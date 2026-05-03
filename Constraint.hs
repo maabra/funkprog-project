@@ -69,7 +69,7 @@ solveMelody n constraints = tryRandom 1000000 1
     tryRandom k attempt = do
       putStrLn $ "Pokusaj " ++ show attempt ++ " / 1000"
 
-      m <- rngMelody n root   -- ✅ FIXED
+      m <- rngMelody n root
       let vals = extractPCs m
       ok <- checkMelody vals constraints
 

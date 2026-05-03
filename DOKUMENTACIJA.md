@@ -112,19 +112,19 @@ Implementira genetski algoritam za evoluciju melodija. Koristi tipove `Pitch` (t
 
 **Druge funkcije:**
 
-`randomPopulation n = replicateM n randomMelody` -  stvara populaciju od "n" nasumičnih melodija.
+`randomPopulation n = replicateM n randomMelody` -  stvara populaciju od "n" nasumičnih melodija
 
-`selectBest pop n = take n $ reverse $ sortOn fitness pop` - sortira populaciju po "fitness" vrijednosti (descending) i uzima najbolje "n" melodija.
+`selectBest pop n = take n $ reverse $ sortOn fitness pop` - sortira populaciju po "fitness" vrijednosti (descending) i uzima najbolje "n" melodija
 
-`crossover a b = do` - spaja dva roditelja uz nasumično odabranu točku (single-point crossover).
+`crossover a b = do` - spaja dva roditelja uz nasumično odabranu točku (single-point crossover)
 
-`mutate m = do` - mijenja jednu notu u melodiji na nasumičnoj poziciji.
+`mutate m = do` - mijenja jednu notu u melodiji na nasumičnoj poziciji
 
-`nextGeneration pop = do` - generira novu populaciju: zadržava elite, ostalo su kombinacije crossover + mutacija.
+`nextGeneration pop = do` - generira novu populaciju: zadržava elite, ostalo su kombinacije crossover + mutacija
 
-`melodyToMusic = line . map (note qn)` - konvertira listu pitcheva u Euterpea glazbu s kvartnim notama.
+`melodyToMusic = line . map (note qn)` - konvertira listu pitcheva u Euterpea glazbu s kvartnim notama
 
-`writeMusic = writeMidi` - sprema glazbu kao MIDI datoteku.
+`writeMusic = writeMidi` - sprema glazbu kao MIDI datoteku
 
 
 #### **Constraint.hs** - SMT solver i ograničenja
